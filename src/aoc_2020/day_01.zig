@@ -19,7 +19,7 @@ pub fn mulTwo(comptime T: type, data: []const T, target: T) !T {
     return CalculationError.NoSolution;
 }
 
-pub fn mulThree(data: []const i64, target: i64) !i64 {
+pub fn mulThree(data: []const isize, target: isize) !isize {
     for (data) |outer_value| {
         for (data) |inner_value| {
             for (data) |most_inner_value| {
@@ -33,38 +33,47 @@ pub fn mulThree(data: []const i64, target: i64) !i64 {
     return CalculationError.NoSolution;
 }
 
-pub fn main() !void {
-    const allocator = std.heap.page_allocator;
-    var list = try std.ArrayList(i64).initCapacity(allocator, 1024);
-    defer list.deinit(allocator);
-
-    var it = std.mem.tokenizeScalar(u8, input, '\n');
+pub fn parseData(allocator: std.mem.Allocator, data: []const u8) !std.ArrayList(isize) {
+    var list = try std.ArrayList(isize).initCapacity(allocator, 256);
+    var it = std.mem.tokenizeScalar(u8, data, '\n');
     while (it.next()) |token| {
-        const parsed = try std.fmt.parseInt(i64, token, 10);
+        const parsed = try std.fmt.parseInt(isize, token, 10);
         try list.append(allocator, parsed);
     }
+    return list;
+}
 
-    print("mul 2 = {}\n", .{try mulTwo(i64, list.items, 2020)});
+pub fn main() !void {
+    const allocator = std.heap.page_allocator;
+    var list = try parseData(allocator, input);
+    defer list.deinit(allocator);
+
+    print("mul 2 = {}\n", .{try mulTwo(isize, list.items, 2020)});
     print("mul 3 = {}\n", .{try mulThree(list.items, 2020)});
 }
 
 test "two entries" {
-    const items = [_]i64{ 1721, 979, 366, 299, 675, 1456 };
-    const result = try mulTwo(i64, &items, 2020);
-
-    try std.testing.expect(result == 514579);
+    const items = [_]isize{ 1721, 979, 366, 299, 675, 1456 };
+    try std.testing.expectEqual(
+        514579,
+        try mulTwo(isize, &items, 2020),
+    );
 }
 
 test "two entries failing" {
-    const items = [_]i64{ 123, 442 };
-    const result = mulTwo(i64, &items, 2020);
+    const items = [_]isize{ 123, 442 };
 
-    try std.testing.expect(result == error.NoSolution);
+    try std.testing.expectError(
+        error.NoSolution,
+        mulTwo(isize, &items, 2020),
+    );
 }
 
 test "three entries" {
-    const items = [_]i64{ 1721, 979, 366, 299, 675, 1456 };
-    const result = try mulThree(&items, 2020);
+    const items = [_]isize{ 1721, 979, 366, 299, 675, 1456 };
 
-    try std.testing.expect(result == 241861950);
+    try std.testing.expectEqual(
+        241861950,
+        try mulThree(&items, 2020),
+    );
 }
