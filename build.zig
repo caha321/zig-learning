@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
         .name = "hello",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/aoc_2020/day_03.zig"),
+            .root_source_file = b.path("src/aoc_2020/day_05.zig"),
             .target = b.graph.host,
         }),
         .use_llvm = true,
