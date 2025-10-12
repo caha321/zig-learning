@@ -1,4 +1,5 @@
 const std = @import("std");
+const color = @import("color.zig");
 
 pub fn main() !void {
     const progess = std.Progress.start(.{
@@ -18,15 +19,13 @@ pub fn main() !void {
     for (0..image_height) |j| {
         progess.completeOne();
         for (0..image_width) |i| {
-            const r: f64 = @as(f64, @floatFromInt(i)) / @as(f64, @floatFromInt(image_width - 1));
-            const g: f64 = @as(f64, @floatFromInt(j)) / @as(f64, @floatFromInt(image_height - 1));
-            const b: f64 = 0.0;
+            const pixel_color = color.Color{ .e = .{
+                @as(f64, @floatFromInt(i)) / @as(f64, @floatFromInt(image_width - 1)),
+                @as(f64, @floatFromInt(j)) / @as(f64, @floatFromInt(image_height - 1)),
+                0.0,
+            } };
 
-            const ir: usize = @intFromFloat(255.999 * r);
-            const ig: usize = @intFromFloat(255.999 * g);
-            const ib: usize = @intFromFloat(255.999 * b);
-
-            try stdout.print("{} {} {}\n", .{ ir, ig, ib });
+            try color.writeColor(stdout, pixel_color);
         }
     }
 }
