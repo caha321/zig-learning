@@ -6,6 +6,7 @@ const Hittable = @import("Hittable.zig");
 const HittableList = @import("HittableList.zig");
 const HitRecord = @import("HitRecord.zig");
 const Sphere = @import("Sphere.zig");
+const Interval = @import("Interval.zig");
 const Color = color.Color;
 const Point3 = Vec3.Point3;
 
@@ -16,7 +17,7 @@ fn lerp(a: f64, start: Color, end: Color) Color {
 
 fn rayColor(r: *const Ray, world: *const HittableList) Color {
     var rec = HitRecord{};
-    if (world.hit(r, 0, std.math.inf(f64), &rec)) {
+    if (world.hit(r, Interval{ .min = 0, .max = std.math.inf(f64) }, &rec)) {
         return rec.normal.add(Color.one).mul(0.5);
     }
 

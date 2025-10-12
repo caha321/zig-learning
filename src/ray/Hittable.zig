@@ -4,6 +4,7 @@
 const std = @import("std");
 const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
+const Interval = @import("Interval.zig");
 
 const Hittable = @This();
 
@@ -13,7 +14,7 @@ impl: *anyopaque,
 vtable: *const VTable,
 
 const VTable = struct {
-    v_hit: *const fn (*anyopaque, ray: *const Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool,
+    v_hit: *const fn (*anyopaque, ray: *const Ray, ray_t: Interval, rec: *HitRecord) bool,
 };
 
 // Link up the implementation pointer and vtable functions
@@ -29,6 +30,6 @@ pub fn implBy(impl: anytype) Hittable {
 
 // Public methods of the interface
 
-pub fn hit(self: Hittable, ray: *const Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
-    return self.vtable.v_hit(self.impl, ray, ray_tmin, ray_tmax, rec);
+pub fn hit(self: Hittable, ray: *const Ray, ray_t: Interval, rec: *HitRecord) bool {
+    return self.vtable.v_hit(self.impl, ray, ray_t, rec);
 }
