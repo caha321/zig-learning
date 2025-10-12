@@ -9,12 +9,12 @@ const Ray = ray.Ray;
 
 fn hitSphere(center: Point3, radius: f64, r: *const Ray) f64 {
     const oc = center.minus(&r.origin);
-    const a = Vec3.dot(&r.direction, &r.direction);
-    const b = -2.0 * Vec3.dot(&r.direction, &oc);
-    const c = Vec3.dot(&oc, &oc) - (radius * radius);
-    const discriminant = b * b - 4 * a * c;
+    const a = r.direction.len_squared();
+    const h = Vec3.dot(&r.direction, &oc);
+    const c = oc.len_squared() - (radius * radius);
+    const discriminant = h * h - a * c;
 
-    return if (discriminant < 0) -1.0 else (-b - @sqrt(discriminant)) / (2.0 * a);
+    return if (discriminant < 0) -1.0 else (h - @sqrt(discriminant)) / a;
 }
 
 /// linear blend / interpolation
