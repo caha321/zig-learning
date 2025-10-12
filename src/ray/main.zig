@@ -7,12 +7,23 @@ const Vec3 = vec3.Vec3;
 const Point3 = vec3.Point3;
 const Ray = ray.Ray;
 
+fn hitSphere(center: Point3, radius: f64, r: *const Ray) bool {
+    const oc = center.minus(&r.origin);
+    const a = Vec3.dot(&r.direction, &r.direction);
+    const b = -2.0 * Vec3.dot(&r.direction, &oc);
+    const c = Vec3.dot(&oc, &oc) - (radius * radius);
+    const discriminant = b * b - 4 * a * c;
+    return discriminant >= 0;
+}
+
 /// linear blend / interpolation
 fn lerp(a: f64, start: Color, end: Color) Color {
     return start.mul_scalar(1.0 - a).plus(&end.mul_scalar(a));
 }
 
 fn rayColor(r: *const Ray) Color {
+    if (hitSphere(Point3.init(0, 0, -1), 0.5, r))
+        return Color.init(1, 0, 0);
     const unit_direction = r.direction.unit_vector();
     const a = 0.5 * (unit_direction.y() + 1.0);
     return lerp(a, Color.one, Color.init(0.5, 0.7, 1.0));

@@ -68,7 +68,7 @@ pub const Vec3 = struct {
         return self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2];
     }
 
-    pub fn double_dot(self: *const Vec3, other: *const Vec3) f64 {
+    pub fn dot(self: *const Vec3, other: *const Vec3) f64 {
         return self.e[0] * other.e[0] + self.e[1] * other.e[1] + self.e[2] * other.e[2];
     }
 
