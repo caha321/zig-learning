@@ -1,5 +1,6 @@
 const std = @import("std");
 const print = std.debug.print;
+const common = @import("common.zig");
 
 const input = @embedFile("day_01_input.txt"); // tip from https://kristoff.it/blog/advent-of-code-zig/
 
@@ -33,19 +34,9 @@ pub fn mulThree(data: []const isize, target: isize) !isize {
     return CalculationError.NoSolution;
 }
 
-pub fn parseData(allocator: std.mem.Allocator, data: []const u8) !std.ArrayList(isize) {
-    var list = try std.ArrayList(isize).initCapacity(allocator, 256);
-    var it = std.mem.tokenizeScalar(u8, data, '\n');
-    while (it.next()) |token| {
-        const parsed = try std.fmt.parseInt(isize, token, 10);
-        try list.append(allocator, parsed);
-    }
-    return list;
-}
-
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
-    var list = try parseData(allocator, input);
+    var list = try common.parseIntData(allocator, input);
     defer list.deinit(allocator);
 
     print("mul 2 = {}\n", .{try mulTwo(isize, list.items, 2020)});
