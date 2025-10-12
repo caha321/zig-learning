@@ -65,7 +65,7 @@ pub fn main() !void {
     // Calculate the location of the upper left pixel.
     const viewport_upper_left = camera_center.minus(&Vec3.init(0, 0, focal_length)).minus(&viewport_u.div_scalar(2)).minus(&viewport_v.div_scalar(2));
 
-    const pixel00_loc = viewport_upper_left.plus_scalar(0.5).mul(&pixel_delta_u.plus(&pixel_delta_v));
+    const pixel00_loc = viewport_upper_left.plus(&(pixel_delta_u.plus(&pixel_delta_v)).mul_scalar(0.5));
 
     // Render
 
@@ -75,7 +75,8 @@ pub fn main() !void {
     for (0..image_height) |j| {
         progess.completeOne();
         for (0..image_width) |i| {
-            const pixel_center = pixel00_loc.plus(&pixel_delta_u.mul_scalar(@floatFromInt(i)).plus(&pixel_delta_v.plus_scalar(@floatFromInt(j))));
+            const pixel_center = pixel00_loc.plus(&pixel_delta_u.mul_scalar(@floatFromInt(i))
+                .plus(&pixel_delta_v.mul_scalar(@floatFromInt(j))));
             const r = Ray{
                 .origin = camera_center,
                 .direction = pixel_center.minus(&camera_center),
