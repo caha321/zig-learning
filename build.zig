@@ -2,9 +2,9 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
-        .name = "hello",
+        .name = "ray",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/aoc_2020/day_05.zig"),
+            .root_source_file = b.path("src/ray/main.zig"),
             .target = b.graph.host,
         }),
         .use_llvm = true,
