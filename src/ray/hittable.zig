@@ -6,8 +6,50 @@ const Point3 = vec3.Point3;
 
 const Error = error{NoHit};
 
-// const no_of_hittables = 8;
-// pub const hittables: [no_of_hittables]Sphere = [_]Sphere{.{}} ** 8;
+// Interface from https://williamw520.github.io/2025/07/13/zig-interface-revisited.html
+// + https://williamw520.github.io/2025/07/17/memory-efficient-zig-interface.html
+
+/// Interface for any hittables
+pub const Hittable = struct {
+    impl: *anyopaque, // (1) pointer to the implementation
+    vtable: *const VTable,
+
+    // (2) implementation function pointers.
+    const VTable = struct {
+        v_hit: *const fn (*anyopaque, ray: *const Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool,
+    };
+
+    // (3) Link up the implementation pointer and vtable functions
+    pub fn implBy(impl_obj: anytype) Hittable {
+        const delegate = HittableDelegate(impl_obj);
+        const vtable = VTable{
+            .v_hit = delegate.hit,
+        };
+        return .{
+            .impl = @constCast(impl_obj), // I had to add this @constCast here to fix compile error
+            .vtable = &vtable,
+        };
+    }
+
+    // (4) Public methods of the interface
+
+    pub fn hit(self: Hittable, ray: *const Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+        return self.vtable.v_hit(self.impl, ray, ray_tmin, ray_tmax, rec);
+    }
+};
+
+// (5) Delegate to turn the opaque pointer back to the implementation.
+inline fn HittableDelegate(impl_obj: anytype) type {
+    return struct {
+        fn hit(impl: *anyopaque, ray: *const Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+            return TPtr(@TypeOf(impl_obj), impl).hit(ray, ray_tmin, ray_tmax, rec);
+        }
+    };
+}
+
+fn TPtr(T: type, opaque_ptr: *anyopaque) T {
+    return @as(T, @ptrCast(@alignCast(opaque_ptr)));
+}
 
 pub const HitRecord = struct {
     p: Point3 = undefined,
@@ -25,17 +67,17 @@ pub const HitRecord = struct {
 };
 
 pub const HittableList = struct {
-    hittables: std.ArrayList(Sphere),
+    hittables: std.ArrayList(Hittable),
     allocator: std.mem.Allocator,
 
     pub fn init(allocator: std.mem.Allocator) !HittableList {
         return HittableList{
-            .hittables = try std.ArrayList(Sphere).initCapacity(allocator, 8),
+            .hittables = try std.ArrayList(Hittable).initCapacity(allocator, 8),
             .allocator = allocator,
         };
     }
 
-    pub fn add(self: *HittableList, obj: Sphere) !void {
+    pub fn add(self: *HittableList, obj: Hittable) !void {
         try self.hittables.append(self.allocator, obj);
     }
 

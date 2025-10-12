@@ -47,8 +47,10 @@ pub fn main() !void {
     // World
 
     var world = try hittable.HittableList.init(allocator);
-    try world.add(hittable.Sphere.init(Point3.init(0, 0, -1), 0.5));
-    try world.add(hittable.Sphere.init(Point3.init(0, -100.5, -1), 100));
+    const sphere1 = hittable.Sphere.init(Point3.init(0, 0, -1), 0.5);
+    const sphere2 = hittable.Sphere.init(Point3.init(0, -100.5, -1), 100);
+    try world.add(hittable.Hittable.implBy(&sphere1));
+    try world.add(hittable.Hittable.implBy(&sphere2));
 
     // Camera
 
