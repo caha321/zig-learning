@@ -7,6 +7,6 @@ pub const Ray = struct {
     direction: Point3,
 
     pub fn at(self: *const Ray, t: f64) Point3 {
-        return Point3{ .e = self.origin.e + t * self.direction.e };
+        return self.origin.plus(&self.direction.mul_scalar(t));
     }
 };

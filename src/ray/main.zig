@@ -7,13 +7,14 @@ const Vec3 = vec3.Vec3;
 const Point3 = vec3.Point3;
 const Ray = ray.Ray;
 
-fn hitSphere(center: Point3, radius: f64, r: *const Ray) bool {
+fn hitSphere(center: Point3, radius: f64, r: *const Ray) f64 {
     const oc = center.minus(&r.origin);
     const a = Vec3.dot(&r.direction, &r.direction);
     const b = -2.0 * Vec3.dot(&r.direction, &oc);
     const c = Vec3.dot(&oc, &oc) - (radius * radius);
     const discriminant = b * b - 4 * a * c;
-    return discriminant >= 0;
+
+    return if (discriminant < 0) -1.0 else (-b - @sqrt(discriminant)) / (2.0 * a);
 }
 
 /// linear blend / interpolation
@@ -22,8 +23,12 @@ fn lerp(a: f64, start: Color, end: Color) Color {
 }
 
 fn rayColor(r: *const Ray) Color {
-    if (hitSphere(Point3.init(0, 0, -1), 0.5, r))
-        return Color.init(1, 0, 0);
+    const t = hitSphere(Point3.init(0, 0, -1), 0.5, r);
+    if (t > 0.0) {
+        const N = Vec3.unit_vector(&r.at(t).minus(&Vec3.init(0, 0, -1)));
+        return Color.init(N.x() + 1, N.y() + 1, N.z() + 1).mul_scalar(0.5);
+    }
+
     const unit_direction = r.direction.unit_vector();
     const a = 0.5 * (unit_direction.y() + 1.0);
     return lerp(a, Color.one, Color.init(0.5, 0.7, 1.0));
