@@ -10,9 +10,13 @@ const Point3 = Vec3.Point3;
 
 const Camera = @This();
 
+var prng = std.Random.DefaultPrng.init(42);
+const rnd = prng.random();
+
 const Options = struct {
     aspect_ratio: f64 = 16.0 / 9.0,
     image_width: usize = 400,
+    samples_per_pixel: usize = 10,
 };
 
 /// Ratio of image width over height
@@ -29,6 +33,10 @@ pixel00_loc: Point3,
 pixel_delta_u: Vec3,
 /// Offset to pixel below
 pixel_delta_v: Vec3,
+/// Count of random samples for each pixel
+samples_per_pixel: usize,
+/// Color scale factor for a sum of pixel samples
+pixel_samples_scale: f64,
 
 pub fn init(options: Options) Camera {
     const image_height = @max(1, @as(usize, @intFromFloat(@as(f64, @floatFromInt(options.image_width)) / options.aspect_ratio)));
@@ -54,11 +62,13 @@ pub fn init(options: Options) Camera {
     return Camera{
         .aspect_ratio = options.aspect_ratio,
         .image_width = options.image_width,
+        .samples_per_pixel = options.samples_per_pixel,
         .image_height = image_height,
         .center = center,
         .pixel00_loc = pixel00_loc,
         .pixel_delta_u = pixel_delta_u,
         .pixel_delta_v = pixel_delta_v,
+        .pixel_samples_scale = 1.0 / @as(f64, @floatFromInt(options.samples_per_pixel)),
     };
 }
 
@@ -71,16 +81,32 @@ pub fn render(self: *const Camera, writer: *std.io.Writer, world: *const Hittabl
     for (0..self.image_height) |j| {
         progess.completeOne();
         for (0..self.image_width) |i| {
-            const pixel_center = self.pixel00_loc.add(self.pixel_delta_u.mul(@as(f64, @floatFromInt(i)))
-                .add(self.pixel_delta_v.mul(@as(f64, @floatFromInt(j)))));
-            const r = Ray{
-                .origin = self.center,
-                .direction = pixel_center.sub(self.center),
-            };
+            var pixel_color = Color.zero;
+            for (0..self.samples_per_pixel) |_| {
+                const ray = self.getRay(i, j);
+                pixel_color = pixel_color.add(rayColor(&ray, world));
+            }
 
-            try color.writeColor(writer, rayColor(&r, world));
+            try color.writeColor(writer, pixel_color.mul(self.pixel_samples_scale));
         }
     }
+}
+
+/// Construct a camera ray originating from the origin and directed at
+/// randomly sampled point around the pixel location i, j.
+fn getRay(self: *const Camera, i: usize, j: usize) Ray {
+    const offset = sampleSquare();
+    const pixel_sample = self.pixel00_loc.add(self.pixel_delta_u.mul(offset.x() + (@as(f64, @floatFromInt(i))))
+        .add(self.pixel_delta_v.mul(offset.y() + @as(f64, @floatFromInt(j)))));
+    return Ray{
+        .origin = self.center,
+        .direction = pixel_sample.sub(self.center),
+    };
+}
+
+/// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+fn sampleSquare() Vec3 {
+    return Vec3.init(std.Random.float(rnd, f64) - 0.5, std.Random.float(rnd, f64) - 0.5, 0);
 }
 
 fn rayColor(r: *const Ray, world: *const HittableList) Color {
