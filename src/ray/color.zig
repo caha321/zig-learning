@@ -3,6 +3,11 @@ const Vec3 = @import("Vec3.zig");
 
 pub const Color = Vec3;
 
+/// linear blend / interpolation
+pub fn lerp(a: f64, start: Color, end: Color) Color {
+    return start.mul(1.0 - a).add(end.mul(a));
+}
+
 pub fn writeColor(writer: *std.io.Writer, pixel: Color) !void {
     // Translate the [0,1] component values to the byte range [0,255].
     const ir: u8 = @intFromFloat(255.999 * pixel.x());
