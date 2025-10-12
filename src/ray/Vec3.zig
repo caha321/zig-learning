@@ -30,40 +30,32 @@ pub fn inv(self: *const Vec3) Vec3 {
     return Vec3{ .e = -self.e };
 }
 
+fn getOther(other: anytype) Vector3 {
+    return switch (@typeInfo(@TypeOf(other))) {
+        .float, .comptime_float => @as(Vector3, @splat(other)),
+        .int, .comptime_int => @as(Vector3, @splat(@floatFromInt(other))),
+        else => other.e,
+    };
+}
+
 /// Element-wise division. Accepts other vectors and scalars.
 pub fn div(self: *const Vec3, other: anytype) Vec3 {
-    if (@TypeOf(other) == Vec3) {
-        return Vec3{ .e = self.e / other.e };
-    } else {
-        return Vec3{ .e = self.e / @as(Vector3, @splat(other)) };
-    }
+    return Vec3{ .e = self.e / getOther(other) };
 }
 
 /// Element-wise subtraction. Accepts other vectors and scalars.
 pub fn sub(self: *const Vec3, other: anytype) Vec3 {
-    if (@TypeOf(other) == Vec3) {
-        return Vec3{ .e = self.e - other.e };
-    } else {
-        return Vec3{ .e = self.e - @as(Vector3, @splat(other)) };
-    }
+    return Vec3{ .e = self.e - getOther(other) };
 }
 
 /// Element-wise multiplication. Accepts other vectors and scalars.
 pub fn mul(self: *const Vec3, other: anytype) Vec3 {
-    if (@TypeOf(other) == Vec3) {
-        return Vec3{ .e = self.e * other.e };
-    } else {
-        return Vec3{ .e = self.e * @as(Vector3, @splat(other)) };
-    }
+    return Vec3{ .e = self.e * getOther(other) };
 }
 
 /// Element-wise addition. Accepts other vectors and scalars.
 pub fn add(self: *const Vec3, other: anytype) Vec3 {
-    if (@TypeOf(other) == Vec3) {
-        return Vec3{ .e = self.e + other.e };
-    } else {
-        return Vec3{ .e = self.e + @as(Vector3, @splat(other)) };
-    }
+    return Vec3{ .e = self.e + getOther(other) };
 }
 
 pub fn len(self: *const Vec3) f64 {
@@ -100,7 +92,8 @@ fn expectApproxEqRel(u: Vec3, v: Vec3) !void {
 
 test "div" {
     const v1 = Vec3.init(1, 2, 3);
-    try expectApproxEqRel(v1.div_scalar(2), Vec3.init(0.5, 1, 1.5));
+    try expectApproxEqRel(v1.div(2), Vec3.init(0.5, 1, 1.5));
+    try expectApproxEqRel(v1.div(2.0), Vec3.init(0.5, 1, 1.5));
     try expectApproxEqRel(v1.div(&Vec3.one), v1);
 }
 
