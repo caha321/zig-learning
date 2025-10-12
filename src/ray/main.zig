@@ -1,27 +1,26 @@
 const std = @import("std");
 const color = @import("color.zig");
-const vec3 = @import("vec3.zig");
+const Vec3 = @import("Vec3.zig");
 const Ray = @import("Ray.zig");
 const Hittable = @import("Hittable.zig");
 const HittableList = @import("HittableList.zig");
 const HitRecord = @import("HitRecord.zig");
 const Sphere = @import("Sphere.zig");
 const Color = color.Color;
-const Vec3 = vec3.Vec3;
-const Point3 = vec3.Point3;
+const Point3 = Vec3.Point3;
 
 /// linear blend / interpolation
 fn lerp(a: f64, start: Color, end: Color) Color {
-    return start.mul_scalar(1.0 - a).plus(&end.mul_scalar(a));
+    return start.mul(1.0 - a).add(end.mul(a));
 }
 
 fn rayColor(r: *const Ray, world: *const HittableList) Color {
     var rec = HitRecord{};
     if (world.hit(r, 0, std.math.inf(f64), &rec)) {
-        return rec.normal.plus(&Color.one).mul_scalar(0.5);
+        return rec.normal.add(Color.one).mul(0.5);
     }
 
-    const unit_direction = r.direction.unit_vector();
+    const unit_direction = r.direction.unitVector();
     const a = 0.5 * (unit_direction.y() + 1.0);
     return lerp(a, Color.one, Color.init(0.5, 0.7, 1.0));
 }
@@ -66,13 +65,13 @@ pub fn main() !void {
     const viewport_v = Vec3.init(0, -viewport_height, 0);
 
     // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    const pixel_delta_u = viewport_u.div_scalar(@floatFromInt(image_width));
-    const pixel_delta_v = viewport_v.div_scalar(@floatFromInt(image_height));
+    const pixel_delta_u = viewport_u.div(@as(f64, @floatFromInt(image_width)));
+    const pixel_delta_v = viewport_v.div(@as(f64, @floatFromInt(image_height)));
 
     // Calculate the location of the upper left pixel.
-    const viewport_upper_left = camera_center.minus(&Vec3.init(0, 0, focal_length)).minus(&viewport_u.div_scalar(2)).minus(&viewport_v.div_scalar(2));
+    const viewport_upper_left = camera_center.sub(Vec3.init(0, 0, focal_length)).sub(viewport_u.div(2)).sub(viewport_v.div(2));
 
-    const pixel00_loc = viewport_upper_left.plus(&(pixel_delta_u.plus(&pixel_delta_v)).mul_scalar(0.5));
+    const pixel00_loc = viewport_upper_left.add((pixel_delta_u.add(pixel_delta_v)).mul(0.5));
 
     // Render
 
@@ -82,11 +81,11 @@ pub fn main() !void {
     for (0..image_height) |j| {
         progess.completeOne();
         for (0..image_width) |i| {
-            const pixel_center = pixel00_loc.plus(&pixel_delta_u.mul_scalar(@floatFromInt(i))
-                .plus(&pixel_delta_v.mul_scalar(@floatFromInt(j))));
+            const pixel_center = pixel00_loc.add(pixel_delta_u.mul(@as(f64, @floatFromInt(i)))
+                .add(pixel_delta_v.mul(@as(f64, @floatFromInt(j)))));
             const r = Ray{
                 .origin = camera_center,
-                .direction = pixel_center.minus(&camera_center),
+                .direction = pixel_center.sub(camera_center),
             };
 
             try color.writeColor(stdout, rayColor(&r, &world));

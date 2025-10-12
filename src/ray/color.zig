@@ -1,5 +1,5 @@
 const std = @import("std");
-const Vec3 = @import("vec3.zig").Vec3;
+const Vec3 = @import("Vec3.zig");
 
 pub const Color = Vec3;
 
