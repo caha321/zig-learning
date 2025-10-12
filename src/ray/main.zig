@@ -2,31 +2,21 @@ const std = @import("std");
 const color = @import("color.zig");
 const vec3 = @import("vec3.zig");
 const ray = @import("ray.zig");
+const hittable = @import("hittable.zig");
 const Color = color.Color;
 const Vec3 = vec3.Vec3;
 const Point3 = vec3.Point3;
 const Ray = ray.Ray;
-
-fn hitSphere(center: Point3, radius: f64, r: *const Ray) f64 {
-    const oc = center.minus(&r.origin);
-    const a = r.direction.len_squared();
-    const h = Vec3.dot(&r.direction, &oc);
-    const c = oc.len_squared() - (radius * radius);
-    const discriminant = h * h - a * c;
-
-    return if (discriminant < 0) -1.0 else (h - @sqrt(discriminant)) / a;
-}
 
 /// linear blend / interpolation
 fn lerp(a: f64, start: Color, end: Color) Color {
     return start.mul_scalar(1.0 - a).plus(&end.mul_scalar(a));
 }
 
-fn rayColor(r: *const Ray) Color {
-    const t = hitSphere(Point3.init(0, 0, -1), 0.5, r);
-    if (t > 0.0) {
-        const N = Vec3.unit_vector(&r.at(t).minus(&Vec3.init(0, 0, -1)));
-        return Color.init(N.x() + 1, N.y() + 1, N.z() + 1).mul_scalar(0.5);
+fn rayColor(r: *const Ray, world: *const hittable.HittableList) Color {
+    var rec = hittable.HitRecord{};
+    if (world.hit(r, 0, std.math.inf(f64), &rec)) {
+        return rec.normal.plus(&Color.one).mul_scalar(0.5);
     }
 
     const unit_direction = r.direction.unit_vector();
@@ -38,6 +28,8 @@ pub fn main() !void {
     const progess = std.Progress.start(.{
         .root_name = "Ray Tracer",
     });
+    const allocator = std.heap.page_allocator;
+
     var buffer: [1024]u8 = undefined;
     var writer = std.fs.File.stdout().writer(&buffer);
     const stdout = &writer.interface;
@@ -51,6 +43,12 @@ pub fn main() !void {
     // Calculate the image height, and ensure that it's at least 1.
     const image_height: usize =
         @max(1, @as(usize, @intFromFloat(@as(comptime_float, @floatFromInt(image_width)) / aspect_ratio)));
+
+    // World
+
+    var world = try hittable.HittableList.init(allocator);
+    try world.add(hittable.Sphere.init(Point3.init(0, 0, -1), 0.5));
+    try world.add(hittable.Sphere.init(Point3.init(0, -100.5, -1), 100));
 
     // Camera
 
@@ -87,7 +85,7 @@ pub fn main() !void {
                 .direction = pixel_center.minus(&camera_center),
             };
 
-            try color.writeColor(stdout, rayColor(&r));
+            try color.writeColor(stdout, rayColor(&r, &world));
         }
     }
 }
