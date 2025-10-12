@@ -1,20 +1,22 @@
 const std = @import("std");
 const color = @import("color.zig");
 const vec3 = @import("vec3.zig");
-const ray = @import("ray.zig");
-const hittable = @import("hittable.zig");
+const Ray = @import("Ray.zig");
+const Hittable = @import("Hittable.zig");
+const HittableList = @import("HittableList.zig");
+const HitRecord = @import("HitRecord.zig");
+const Sphere = @import("Sphere.zig");
 const Color = color.Color;
 const Vec3 = vec3.Vec3;
 const Point3 = vec3.Point3;
-const Ray = ray.Ray;
 
 /// linear blend / interpolation
 fn lerp(a: f64, start: Color, end: Color) Color {
     return start.mul_scalar(1.0 - a).plus(&end.mul_scalar(a));
 }
 
-fn rayColor(r: *const Ray, world: *const hittable.HittableList) Color {
-    var rec = hittable.HitRecord{};
+fn rayColor(r: *const Ray, world: *const HittableList) Color {
+    var rec = HitRecord{};
     if (world.hit(r, 0, std.math.inf(f64), &rec)) {
         return rec.normal.plus(&Color.one).mul_scalar(0.5);
     }
@@ -46,11 +48,11 @@ pub fn main() !void {
 
     // World
 
-    var world = try hittable.HittableList.init(allocator);
-    const sphere1 = hittable.Sphere.init(Point3.init(0, 0, -1), 0.5);
-    const sphere2 = hittable.Sphere.init(Point3.init(0, -100.5, -1), 100);
-    try world.add(hittable.Hittable.implBy(&sphere1));
-    try world.add(hittable.Hittable.implBy(&sphere2));
+    var world = try HittableList.init(allocator);
+    const sphere1 = Sphere.init(Point3.init(0, 0, -1), 0.5);
+    const sphere2 = Sphere.init(Point3.init(0, -100.5, -1), 100);
+    try world.add(Hittable.implBy(&sphere1));
+    try world.add(Hittable.implBy(&sphere2));
 
     // Camera
 
