@@ -4,14 +4,16 @@ const HitRecord = @import("HitRecord.zig");
 const Vec3 = vec3.Vec3;
 const Point3 = vec3.Point3;
 
+const Sphere = @This();
+
 center: Point3,
 radius: f64,
 
-pub fn init(center: Point3, radius: f64) @This() {
-    return @This(){ .center = center, .radius = @max(0, radius) };
+pub fn init(center: Point3, radius: f64) Sphere {
+    return Sphere{ .center = center, .radius = @max(0, radius) };
 }
 
-pub fn hit(self: *const @This(), ray: *const Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
+pub fn hit(self: *const Sphere, ray: *const Ray, ray_tmin: f64, ray_tmax: f64, rec: *HitRecord) bool {
     const oc = self.center.minus(&ray.origin);
     const a = ray.direction.len_squared();
     const h = Vec3.dot(&ray.direction, &oc);
