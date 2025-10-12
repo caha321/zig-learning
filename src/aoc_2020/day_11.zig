@@ -1,5 +1,7 @@
 const std = @import("std");
 const assert = std.debug.assert;
+const time = std.time;
+const Timer = time.Timer;
 const print = std.debug.print;
 const common = @import("common.zig");
 
@@ -11,23 +13,26 @@ pub fn main() !void {
     var grid = Grid{};
     grid.load(input);
 
+    var timer = try Timer.start();
     while (grid.stepRuleFirst()) {
         print("1 - it {}\r", .{grid.iteration});
     }
 
+    const elapsed1: f64 = @floatFromInt(timer.read());
     print(
-        "Occupied seats (Rule 1): {} after {} iterations\n",
-        .{ grid.totalOccupied(), grid.iteration },
+        "Occupied seats (Rule 1): {} after {} iterations in {d:.3}ms\n",
+        .{ grid.totalOccupied(), grid.iteration, elapsed1 / time.ns_per_ms },
     );
 
     grid.reset();
-
+    timer.reset();
     while (grid.stepRuleSecond()) {
         print("2 - it {}\r", .{grid.iteration});
     }
+    const elapsed2: f64 = @floatFromInt(timer.read());
     print(
-        "Occupied seats (Rule 2): {} after {} iterations\n",
-        .{ grid.totalOccupied(), grid.iteration },
+        "Occupied seats (Rule 2): {} after {} iterations in {d:.3}ms\n",
+        .{ grid.totalOccupied(), grid.iteration, elapsed2 / time.ns_per_ms },
     );
 }
 
