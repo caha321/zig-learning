@@ -1,9 +1,11 @@
 const Ray = @import("Ray.zig");
 const Vec3 = @import("Vec3.zig");
+const Material = @import("Material.zig");
 const Point3 = Vec3.Point3;
 
 p: Point3 = undefined,
 normal: Vec3 = undefined,
+mat: *Material = undefined,
 t: f64 = undefined,
 frontFace: bool = undefined,
 

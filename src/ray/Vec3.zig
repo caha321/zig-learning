@@ -119,6 +119,15 @@ pub fn randomOnHemisphere(normal: Vec3) Vec3 {
     }
 }
 
+pub fn reflect(self: *const Vec3, normal: *const Vec3) Vec3 {
+    return self.sub(normal.mul(2.0 * self.dot(normal)));
+}
+
+pub fn nearZero(self: *const Vec3) bool {
+    const s = 1e-8;
+    return @abs(self.e[0]) < s and @abs(self.e[1]) < s and @abs(self.e[2]) < s;
+}
+
 pub const Point3 = Vec3;
 
 fn expectApproxEqRel(u: Vec3, v: Vec3) !void {
@@ -137,4 +146,9 @@ test "div" {
 test "unit" {
     const v1 = Vec3.init(1, 2, 3);
     try std.testing.expectApproxEqRel(1, v1.unitVector().len(), std.math.floatEpsAt(f64, 1));
+}
+
+test "near zero" {
+    try std.testing.expect(nearZero(&Vec3.zero));
+    try std.testing.expect(!nearZero(&Vec3.one));
 }

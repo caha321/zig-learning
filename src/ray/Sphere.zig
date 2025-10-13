@@ -3,14 +3,20 @@ const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
 const Point3 = Vec3.Point3;
 const Interval = @import("Interval.zig");
+const Material = @import("Material.zig");
 
 const Sphere = @This();
 
 center: Point3,
 radius: f64,
+mat: Material,
 
-pub fn init(center: Point3, radius: f64) Sphere {
-    return Sphere{ .center = center, .radius = @max(0, radius) };
+pub fn init(center: Point3, radius: f64, mat: Material) Sphere {
+    return Sphere{
+        .center = center,
+        .radius = @max(0, radius),
+        .mat = mat,
+    };
 }
 
 // implements the Hittable interface
@@ -36,6 +42,7 @@ pub fn hit(self: *const Sphere, ray: *const Ray, ray_t: Interval, rec: *HitRecor
 
     rec.t = root;
     rec.p = ray.at(rec.t);
+    rec.mat = @constCast(&self.mat);
     const outward_normal = rec.p.sub(self.center).div(self.radius);
     rec.setFaceNormal(ray, &outward_normal);
     return true;

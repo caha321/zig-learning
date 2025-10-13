@@ -119,14 +119,17 @@ fn rayColor(ray: *const Ray, depth: isize, world: *const HittableList) Color {
     // min of 0.001 to fix the "shadow acne" problem
     if (world.hit(ray, Interval{ .min = 0.001, .max = std.math.inf(f64) }, &rec)) {
         // return rec.normal.add(Color.one).mul(0.5);
-        return rayColor(&Ray{
-            .origin = rec.p,
-            //.direction = Vec3.randomOnHemisphere(rec.normal),
-            .direction = rec.normal.add(Vec3.randomUnitVector()), // Lambertian distribution
-        }, depth - 1, world).mul(0.5);
+        var scattered = Ray{};
+        var attenuation = Color.zero;
+        if (rec.mat.scatter(ray, &rec, &attenuation, &scattered))
+            return attenuation.mul(rayColor(&scattered, depth - 1, world));
+        return Color.zero;
     }
 
-    const unit_direction = ray.direction.unitVector();
-    const a = 0.5 * (unit_direction.y() + 1.0);
-    return color.lerp(a, Color.one, Color.init(0.5, 0.7, 1.0));
+    // background
+    return color.lerp(
+        0.5 * (ray.direction.unitVector().y() + 1.0),
+        Color.one,
+        Color.init(0.5, 0.7, 1.0),
+    );
 }
