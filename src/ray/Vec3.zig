@@ -1,5 +1,6 @@
 //! A vector with 3 elements. Used for directions, points, colors etc.
 const std = @import("std");
+const util = @import("util.zig");
 
 const Vector3 = @Vector(3, f64);
 
@@ -80,6 +81,42 @@ pub fn cross(self: *const Vec3, other: *const Vec3) Vec3 {
 
 pub fn unitVector(self: *const Vec3) Vec3 {
     return Vec3{ .e = self.e / @as(Vector3, @splat(self.len())) };
+}
+
+/// Returns a random vector where each element is in [0,1)
+pub fn random() Vec3 {
+    return Vec3{ .e = .{
+        util.rnd.float(f64),
+        util.rnd.float(f64),
+        util.rnd.float(f64),
+    } };
+}
+
+/// Returns a random vector where each element is in [min,max)
+pub fn randomMinMax(min: f64, max: f64) Vec3 {
+    return Vec3{ .e = .{
+        util.randomFloatMinMax(f64, min, max),
+        util.randomFloatMinMax(f64, min, max),
+        util.randomFloatMinMax(f64, min, max),
+    } };
+}
+
+/// Return a random vector inside the unit sphere using a rejection method.
+pub fn randomUnitVector() Vec3 {
+    while (true) {
+        const p = Vec3.randomMinMax(-1, 1);
+        const lensq = p.lenSquared();
+        if (1e-160 < lensq and lensq <= 1) return p.div(@sqrt(lensq));
+    }
+}
+
+pub fn randomOnHemisphere(normal: Vec3) Vec3 {
+    const on_unit_sphere = randomUnitVector();
+    if (dot(&on_unit_sphere, &normal) > 0.0) { // In the same hemisphere as the normal
+        return on_unit_sphere;
+    } else {
+        return on_unit_sphere.inv();
+    }
 }
 
 pub const Point3 = Vec3;

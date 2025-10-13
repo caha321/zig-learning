@@ -7,16 +7,15 @@ const color = @import("color.zig");
 const Color = color.Color;
 const Vec3 = @import("Vec3.zig");
 const Point3 = Vec3.Point3;
+const util = @import("util.zig");
 
 const Camera = @This();
-
-var prng = std.Random.DefaultPrng.init(42);
-const rnd = prng.random();
 
 const Options = struct {
     aspect_ratio: f64 = 16.0 / 9.0,
     image_width: usize = 400,
     samples_per_pixel: usize = 10,
+    max_depth: isize = 10,
 };
 
 /// Ratio of image width over height
@@ -37,6 +36,8 @@ pixel_delta_v: Vec3,
 samples_per_pixel: usize,
 /// Color scale factor for a sum of pixel samples
 pixel_samples_scale: f64,
+/// Maximum number of ray bounces into scene
+max_depth: isize,
 
 pub fn init(options: Options) Camera {
     const image_height = @max(1, @as(usize, @intFromFloat(@as(f64, @floatFromInt(options.image_width)) / options.aspect_ratio)));
@@ -63,6 +64,7 @@ pub fn init(options: Options) Camera {
         .aspect_ratio = options.aspect_ratio,
         .image_width = options.image_width,
         .samples_per_pixel = options.samples_per_pixel,
+        .max_depth = options.max_depth,
         .image_height = image_height,
         .center = center,
         .pixel00_loc = pixel00_loc,
@@ -84,7 +86,7 @@ pub fn render(self: *const Camera, writer: *std.io.Writer, world: *const Hittabl
             var pixel_color = Color.zero;
             for (0..self.samples_per_pixel) |_| {
                 const ray = self.getRay(i, j);
-                pixel_color = pixel_color.add(rayColor(&ray, world));
+                pixel_color = pixel_color.add(rayColor(&ray, self.max_depth, world));
             }
 
             try color.writeColor(writer, pixel_color.mul(self.pixel_samples_scale));
@@ -106,16 +108,25 @@ fn getRay(self: *const Camera, i: usize, j: usize) Ray {
 
 /// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
 fn sampleSquare() Vec3 {
-    return Vec3.init(std.Random.float(rnd, f64) - 0.5, std.Random.float(rnd, f64) - 0.5, 0);
+    return Vec3.init(std.Random.float(util.rnd, f64) - 0.5, std.Random.float(util.rnd, f64) - 0.5, 0);
 }
 
-fn rayColor(r: *const Ray, world: *const HittableList) Color {
+fn rayColor(ray: *const Ray, depth: isize, world: *const HittableList) Color {
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0) return Color.zero;
+
     var rec = HitRecord{};
-    if (world.hit(r, Interval{ .min = 0, .max = std.math.inf(f64) }, &rec)) {
-        return rec.normal.add(Color.one).mul(0.5);
+    // min of 0.001 to fix the "shadow acne" problem
+    if (world.hit(ray, Interval{ .min = 0.001, .max = std.math.inf(f64) }, &rec)) {
+        // return rec.normal.add(Color.one).mul(0.5);
+        return rayColor(&Ray{
+            .origin = rec.p,
+            //.direction = Vec3.randomOnHemisphere(rec.normal),
+            .direction = rec.normal.add(Vec3.randomUnitVector()), // Lambertian distribution
+        }, depth - 1, world).mul(0.5);
     }
 
-    const unit_direction = r.direction.unitVector();
+    const unit_direction = ray.direction.unitVector();
     const a = 0.5 * (unit_direction.y() + 1.0);
     return color.lerp(a, Color.one, Color.init(0.5, 0.7, 1.0));
 }
