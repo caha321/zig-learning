@@ -37,10 +37,14 @@ pub fn main() !void {
 
     // Camera
 
-    const cam = Camera.init(.{});
+    const cam = Camera.init(.{
+        .image_width = 800,
+        .max_depth = 20,
+        .samples_per_pixel = 20,
+    });
     const image = try Image.init(allocator, cam.image_width, cam.image_height);
 
-    try cam.render(&image, &world);
+    try cam.render(allocator, &image, &world);
 
     try image.write(stdout);
 }

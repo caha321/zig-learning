@@ -76,22 +76,41 @@ pub fn init(options: Options) Camera {
     };
 }
 
-pub fn render(self: *const Camera, image: *const Image, world: *const HittableList) !void {
-    const progess = std.Progress.start(.{ .root_name = "Ray Tracer" });
-
-    progess.setEstimatedTotalItems(self.image_height);
-    for (0..self.image_height) |j| {
-        progess.completeOne();
-        for (0..self.image_width) |i| {
-            var pixel_color = Color.zero;
-            for (0..self.samples_per_pixel) |_| {
-                const ray = self.getRay(i, j);
-                pixel_color = pixel_color.add(rayColor(&ray, self.max_depth, world));
-            }
-
-            image.data[j * self.image_width + i] = Pixel.fromColor(pixel_color.mul(self.pixel_samples_scale));
+fn renderRow(self: *const Camera, y: usize, image: *const Image, world: *const HittableList, progress: std.Progress.Node) void {
+    var buf: [32]u8 = undefined;
+    const name = std.fmt.bufPrint(&buf, "Row {d}", .{y}) catch "Row ??";
+    const progress_row = progress.start(name, self.image_width);
+    for (0..self.image_width) |x| {
+        var pixel_color = Color.zero;
+        for (0..self.samples_per_pixel) |_| {
+            const ray = self.getRay(x, y);
+            pixel_color = pixel_color.add(rayColor(&ray, self.max_depth, world));
         }
+
+        image.data[y * self.image_width + x] = Pixel.fromColor(pixel_color.mul(self.pixel_samples_scale));
+        progress_row.completeOne();
     }
+    progress_row.end();
+}
+
+pub fn render(self: *const Camera, allocator: std.mem.Allocator, image: *const Image, world: *const HittableList) !void {
+    var pool: std.Thread.Pool = undefined;
+    try pool.init(.{ .allocator = allocator });
+    defer pool.deinit();
+
+    const progress = std.Progress.start(.{
+        .root_name = "Ray Tracer",
+        .estimated_total_items = self.image_height,
+    });
+
+    // queue a thread for each row
+    for (0..self.image_height) |y| {
+        try pool.spawn(renderRow, .{ self, y, image, world, progress });
+    }
+
+    var wait_group: std.Thread.WaitGroup = undefined;
+    wait_group.reset();
+    pool.waitAndWork(&wait_group);
 }
 
 /// Construct a camera ray originating from the origin and directed at
