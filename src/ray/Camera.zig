@@ -5,9 +5,11 @@ const Interval = @import("Interval.zig");
 const Ray = @import("Ray.zig");
 const color = @import("color.zig");
 const Color = color.Color;
+const Pixel = color.Pixel;
 const Vec3 = @import("Vec3.zig");
 const Point3 = Vec3.Point3;
 const util = @import("util.zig");
+const Image = @import("Image.zig");
 
 const Camera = @This();
 
@@ -74,10 +76,8 @@ pub fn init(options: Options) Camera {
     };
 }
 
-pub fn render(self: *const Camera, writer: *std.io.Writer, world: *const HittableList) !void {
+pub fn render(self: *const Camera, image: *const Image, world: *const HittableList) !void {
     const progess = std.Progress.start(.{ .root_name = "Ray Tracer" });
-
-    try writer.print("P3\n{} {}\n255\n", .{ self.image_width, self.image_height });
 
     progess.setEstimatedTotalItems(self.image_height);
     for (0..self.image_height) |j| {
@@ -89,7 +89,7 @@ pub fn render(self: *const Camera, writer: *std.io.Writer, world: *const Hittabl
                 pixel_color = pixel_color.add(rayColor(&ray, self.max_depth, world));
             }
 
-            try color.writeColor(writer, pixel_color.mul(self.pixel_samples_scale));
+            image.data[j * self.image_width + i] = Pixel.fromColor(pixel_color.mul(self.pixel_samples_scale));
         }
     }
 }

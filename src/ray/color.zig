@@ -15,17 +15,28 @@ pub fn linearToGamma(linear_component: f64) f64 {
     return 0.0;
 }
 
-pub fn writeColor(writer: *std.io.Writer, pixel: Color) !void {
+pub const Pixel = packed struct {
+    r: u8,
+    g: u8,
+    b: u8,
 
-    // Apply a linear to gamma transform for gamma 2
-    const r = linearToGamma(pixel.x());
-    const g = linearToGamma(pixel.y());
-    const b = linearToGamma(pixel.z());
+    pub const black = Pixel{ .r = 0, .g = 0, .b = 0 };
 
-    // Translate the [0,1] component values to the byte range [0,255].
-    const ir: u8 = @intFromFloat(256 * intensity.clamp(r));
-    const ig: u8 = @intFromFloat(256 * intensity.clamp(g));
-    const ib: u8 = @intFromFloat(256 * intensity.clamp(b));
+    pub fn fromColor(color: Color) Pixel {
+        // Apply a linear to gamma transform for gamma 2
+        const r = linearToGamma(color.x());
+        const g = linearToGamma(color.y());
+        const b = linearToGamma(color.z());
 
-    try writer.print("{} {} {}\n", .{ ir, ig, ib });
-}
+        return Pixel{
+            // Translate the [0,1] component values to the byte range [0,255].
+            .r = @intFromFloat(256 * intensity.clamp(r)),
+            .g = @intFromFloat(256 * intensity.clamp(g)),
+            .b = @intFromFloat(256 * intensity.clamp(b)),
+        };
+    }
+
+    pub fn write(self: Pixel, writer: *std.io.Writer) !void {
+        try writer.print("{} {} {}\n", .{ self.r, self.g, self.b });
+    }
+};

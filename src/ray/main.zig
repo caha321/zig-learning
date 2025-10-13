@@ -6,6 +6,7 @@ const HittableList = @import("HittableList.zig");
 const Sphere = @import("Sphere.zig");
 const Point3 = Vec3.Point3;
 const Material = @import("Material.zig");
+const Image = @import("Image.zig");
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
@@ -37,6 +38,9 @@ pub fn main() !void {
     // Camera
 
     const cam = Camera.init(.{});
+    const image = try Image.init(allocator, cam.image_width, cam.image_height);
 
-    try cam.render(stdout, &world);
+    try cam.render(&image, &world);
+
+    try image.write(stdout);
 }
