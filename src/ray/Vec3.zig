@@ -73,9 +73,9 @@ pub fn dot(self: *const Vec3, other: *const Vec3) f64 {
 
 pub fn cross(self: *const Vec3, other: *const Vec3) Vec3 {
     return Vec3{ .e = .{
-        self.e[1] * other.e[2] + self.e[2] * other.e[1],
-        self.e[2] * other.e[0] + self.e[0] * other.e[2],
-        self.e[0] * other.e[1] + self.e[1] * other.e[0],
+        self.e[1] * other.e[2] - self.e[2] * other.e[1],
+        self.e[2] * other.e[0] - self.e[0] * other.e[2],
+        self.e[0] * other.e[1] - self.e[1] * other.e[0],
     } };
 }
 
@@ -158,4 +158,13 @@ test "unit" {
 test "near zero" {
     try std.testing.expect(nearZero(&Vec3.zero));
     try std.testing.expect(!nearZero(&Vec3.one));
+}
+
+test "cross" {
+    const a = Vec3.init(2, 3, 4);
+    const b = Vec3.init(5, 6, 7);
+    const expected = Vec3.init(-3, 6, -3);
+
+    try expectApproxEqRel(expected, a.cross(&b));
+    try expectApproxEqRel(expected.inv(), b.cross(&a));
 }
