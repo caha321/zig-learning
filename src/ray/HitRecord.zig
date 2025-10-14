@@ -1,6 +1,6 @@
 const Ray = @import("Ray.zig");
 const Vec3 = @import("Vec3.zig");
-const Material = @import("Material.zig");
+const Material = @import("material.zig").Material;
 const Point3 = Vec3.Point3;
 
 p: Point3 = undefined,

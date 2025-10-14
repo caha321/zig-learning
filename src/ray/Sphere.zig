@@ -3,7 +3,7 @@ const Ray = @import("Ray.zig");
 const HitRecord = @import("HitRecord.zig");
 const Point3 = Vec3.Point3;
 const Interval = @import("Interval.zig");
-const Material = @import("Material.zig");
+const Material = @import("material.zig").Material;
 
 const Sphere = @This();
 

@@ -5,7 +5,7 @@ const Hittable = @import("Hittable.zig");
 const HittableList = @import("HittableList.zig");
 const Sphere = @import("Sphere.zig");
 const Point3 = Vec3.Point3;
-const Material = @import("Material.zig");
+const material = @import("material.zig");
 const Image = @import("Image.zig");
 
 pub fn main() !void {
@@ -18,8 +18,8 @@ pub fn main() !void {
 
     // Materials
 
-    var materials = std.StringArrayHashMap(Material).init(allocator);
-    try Material.parseMaterialsJson(allocator, &materials);
+    var materials = std.StringArrayHashMap(material.Material).init(allocator);
+    try material.parseMaterialsJson(allocator, &materials);
     materials.lockPointers();
 
     // World
