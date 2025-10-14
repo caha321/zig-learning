@@ -5,7 +5,7 @@ const Point3 = Vec3.Point3;
 
 p: Point3 = undefined,
 normal: Vec3 = undefined,
-mat: *Material = undefined,
+mat: *const Material = undefined,
 t: f64 = undefined,
 frontFace: bool = undefined,
 

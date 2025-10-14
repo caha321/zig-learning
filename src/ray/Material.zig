@@ -27,7 +27,7 @@ pub fn initMetal(albedo: Color, fuzz: f64) Material {
     };
 }
 
-pub fn scatter(self: *Material, ray: *const Ray, rec: *HitRecord, attenuation: *Color, scattered: *Ray) bool {
+pub fn scatter(self: *const Material, ray: *const Ray, rec: *HitRecord, attenuation: *Color, scattered: *Ray) bool {
     switch (self.material_type) {
         .lambertian => {
             var scatter_direction = rec.normal.add(Vec3.randomUnitVector());

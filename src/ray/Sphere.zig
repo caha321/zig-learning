@@ -9,9 +9,9 @@ const Sphere = @This();
 
 center: Point3,
 radius: f64,
-mat: Material,
+mat: *const Material,
 
-pub fn init(center: Point3, radius: f64, mat: Material) Sphere {
+pub fn init(center: Point3, radius: f64, mat: *const Material) Sphere {
     return Sphere{
         .center = center,
         .radius = @max(0, radius),
@@ -42,7 +42,7 @@ pub fn hit(self: *const Sphere, ray: *const Ray, ray_t: Interval, rec: *HitRecor
 
     rec.t = root;
     rec.p = ray.at(rec.t);
-    rec.mat = @constCast(&self.mat);
+    rec.mat = self.mat;
     const outward_normal = rec.p.sub(self.center).div(self.radius);
     rec.setFaceNormal(ray, &outward_normal);
     return true;
