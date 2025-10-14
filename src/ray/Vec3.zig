@@ -131,23 +131,22 @@ pub fn refract(self: *const Vec3, normal: *const Vec3, etai_over_estat: f64) Vec
 }
 
 pub fn nearZero(self: *const Vec3) bool {
-    const s = 1e-8;
-    return @abs(self.e[0]) < s and @abs(self.e[1]) < s and @abs(self.e[2]) < s;
+    return @reduce(.And, @abs(self.e) < @as(Vector3, @splat(1e-8)));
 }
 
 pub const Point3 = Vec3;
 
-fn expectApproxEqRel(u: Vec3, v: Vec3) !void {
-    try std.testing.expectApproxEqRel(u.e[0], v.e[0], std.math.floatEpsAt(f64, u.e[0]));
-    try std.testing.expectApproxEqRel(u.e[1], v.e[1], std.math.floatEpsAt(f64, u.e[1]));
-    try std.testing.expectApproxEqRel(u.e[2], v.e[2], std.math.floatEpsAt(f64, u.e[2]));
+fn expectApproxEqRel(expected: Vec3, actual: Vec3) !void {
+    try std.testing.expectApproxEqRel(expected.e[0], actual.e[0], std.math.floatEpsAt(f64, expected.e[0]));
+    try std.testing.expectApproxEqRel(expected.e[1], actual.e[1], std.math.floatEpsAt(f64, expected.e[1]));
+    try std.testing.expectApproxEqRel(expected.e[2], actual.e[2], std.math.floatEpsAt(f64, expected.e[2]));
 }
 
 test "div" {
     const v1 = Vec3.init(1, 2, 3);
-    try expectApproxEqRel(v1.div(2), Vec3.init(0.5, 1, 1.5));
-    try expectApproxEqRel(v1.div(2.0), Vec3.init(0.5, 1, 1.5));
-    try expectApproxEqRel(v1.div(&Vec3.one), v1);
+    try expectApproxEqRel(Vec3.init(0.5, 1, 1.5), v1.div(2));
+    try expectApproxEqRel(Vec3.init(0.5, 1, 1.5), v1.div(2.0));
+    try expectApproxEqRel(v1, v1.div(&Vec3.one));
 }
 
 test "unit" {
