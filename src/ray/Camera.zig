@@ -7,60 +7,57 @@ const Color = lib.Color;
 
 const Camera = @This();
 
-const Options = struct {
-    aspect_ratio: f64 = 16.0 / 9.0,
-    image_width: usize = 400,
-    samples_per_pixel: usize = 10,
-    max_depth: isize = 10,
-    vfov: f64 = 90,
-    look_from: Point3 = Point3.init(0, 0, 0),
-    look_at: Point3 = Point3.init(0, 0, -1),
-    v_up: Vec3 = Vec3.init(0, 1, 0),
-};
-
 /// Ratio of image width over height
-aspect_ratio: f64,
+aspect_ratio: f64 = 16.0 / 9.0,
 /// Rendered image width in pixel count
-image_width: usize,
-/// Rendered image height
-image_height: usize,
-/// Camera center
-center: Point3,
-/// Location of pixel 0, 0
-pixel00_loc: Point3,
-/// Offset to pixel to the right
-pixel_delta_u: Vec3,
-/// Offset to pixel below
-pixel_delta_v: Vec3,
+image_width: usize = 400,
 /// Count of random samples for each pixel
-samples_per_pixel: usize,
-/// Color scale factor for a sum of pixel samples
-pixel_samples_scale: f64,
+samples_per_pixel: usize = 10,
 /// Maximum number of ray bounces into scene
-max_depth: isize,
-/// Vertical view angle (field of view)
-vfov: f64,
-/// Point camera is looking from
-look_from: Point3,
-/// Point camera is looking at
-look_at: Point3,
-/// Camera-relative "up" direction
-v_up: Vec3,
+max_depth: isize = 10,
 
-pub fn init(options: Options) Camera {
-    const image_height = @max(1, @as(usize, @intFromFloat(@as(f64, @floatFromInt(options.image_width)) / options.aspect_ratio)));
-    const center = options.look_from;
+/// Vertical view angle (field of view)
+vfov: f64 = 90,
+/// Point camera is looking from
+look_from: Point3 = Point3.init(0, 0, 0),
+/// Point camera is looking at
+look_at: Point3 = Point3.init(0, 0, -1),
+/// Camera-relative "up" direction
+v_up: Vec3 = Vec3.init(0, 1, 0),
+
+/////////////////////////////////////
+// set via initialize()
+
+/// Rendered image height
+image_height: usize = undefined,
+/// Camera center
+center: Point3 = undefined,
+/// Location of pixel 0, 0
+pixel00_loc: Point3 = undefined,
+/// Offset to pixel to the right
+pixel_delta_u: Vec3 = undefined,
+/// Offset to pixel below
+pixel_delta_v: Vec3 = undefined,
+
+/// Color scale factor for a sum of pixel samples
+pixel_samples_scale: f64 = undefined,
+
+pub fn init(self: *Camera) void {
+    self.image_height = @max(1, @as(usize, @intFromFloat(@as(f64, @floatFromInt(self.image_width)) / self.aspect_ratio)));
+    self.pixel_samples_scale = 1.0 / @as(f64, @floatFromInt(self.samples_per_pixel));
+
+    self.center = self.look_from;
 
     // Determine viewport dimensions.
-    const focal_length = options.look_from.sub(options.look_at).len();
-    const theta = std.math.degreesToRadians(options.vfov);
+    const focal_length = self.look_from.sub(self.look_at).len();
+    const theta = std.math.degreesToRadians(self.vfov);
     const h = @tan(theta / 2);
     const viewport_height = 2 * h * focal_length;
-    const viewport_width = viewport_height * ((@as(f64, @floatFromInt(options.image_width)) / @as(f64, @floatFromInt(image_height))));
+    const viewport_width = viewport_height * ((@as(f64, @floatFromInt(self.image_width)) / @as(f64, @floatFromInt(self.image_height))));
 
     // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
-    const w = options.look_from.sub(options.look_at).unitVector();
-    const u = Vec3.cross(&options.v_up, &w).unitVector();
+    const w = self.look_from.sub(self.look_at).unitVector();
+    const u = Vec3.cross(&self.v_up, &w).unitVector();
     const v = Vec3.cross(&w, &u);
 
     // Calculate the vectors across the horizontal and down the vertical viewport edges.
@@ -68,31 +65,12 @@ pub fn init(options: Options) Camera {
     const viewport_v = v.inv().mul(viewport_height); // Vector down viewport vertical edge
 
     // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    const pixel_delta_u = viewport_u.div(options.image_width);
-    const pixel_delta_v = viewport_v.div(image_height);
+    self.pixel_delta_u = viewport_u.div(self.image_width);
+    self.pixel_delta_v = viewport_v.div(self.image_height);
 
     // Calculate the location of the upper left pixel.
-    const viewport_upper_left = center.sub(w.mul(focal_length)).sub(viewport_u.div(2)).sub(viewport_v.div(2));
-    const pixel00_loc = viewport_upper_left.add((pixel_delta_u.add(pixel_delta_v)).mul(0.5));
-
-    return Camera{
-        // from options
-        .aspect_ratio = options.aspect_ratio,
-        .image_width = options.image_width,
-        .samples_per_pixel = options.samples_per_pixel,
-        .max_depth = options.max_depth,
-        .vfov = options.vfov,
-        .look_at = options.look_at,
-        .look_from = options.look_from,
-        .v_up = options.v_up,
-        // calculated
-        .image_height = image_height,
-        .center = center,
-        .pixel00_loc = pixel00_loc,
-        .pixel_delta_u = pixel_delta_u,
-        .pixel_delta_v = pixel_delta_v,
-        .pixel_samples_scale = 1.0 / @as(f64, @floatFromInt(options.samples_per_pixel)),
-    };
+    const viewport_upper_left = self.center.sub(w.mul(focal_length)).sub(viewport_u.div(2)).sub(viewport_v.div(2));
+    self.pixel00_loc = viewport_upper_left.add((self.pixel_delta_u.add(self.pixel_delta_v)).mul(0.5));
 }
 
 fn renderRow(

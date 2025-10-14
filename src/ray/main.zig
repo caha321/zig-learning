@@ -38,13 +38,14 @@ pub fn main() !void {
 
     // Camera
 
-    const cam = lib.Camera.init(.{
+    var cam = lib.Camera{
         .image_width = 400,
         .max_depth = 10,
         .samples_per_pixel = 10,
         .vfov = 20,
         .look_from = Point3.init(-2, 2, 1),
-    });
+    };
+    cam.init();
     const image = try lib.Image.init(allocator, cam.image_width, cam.image_height);
 
     var timer = try std.time.Timer.start();
