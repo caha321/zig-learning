@@ -30,6 +30,7 @@ pub fn main() !void {
     try spheres.put("ground", Sphere.init(Vec3.init(0.0, -100.5, -1.0), 100.0, materials.getPtr("ground").?));
     try spheres.put("center", Sphere.init(Vec3.init(0.0, 0, -1.2), 0.5, materials.getPtr("center").?));
     try spheres.put("left", Sphere.init(Vec3.init(-1.0, 0, -1.0), 0.5, materials.getPtr("left").?));
+    try spheres.put("bubble", Sphere.init(Vec3.init(-1.0, 0, -1.0), 0.4, materials.getPtr("bubble").?));
     try spheres.put("right", Sphere.init(Vec3.init(1.0, 0, -1.0), 0.5, materials.getPtr("right").?));
     spheres.lockPointers();
 

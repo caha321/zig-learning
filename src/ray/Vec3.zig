@@ -123,6 +123,13 @@ pub fn reflect(self: *const Vec3, normal: *const Vec3) Vec3 {
     return self.sub(normal.mul(2.0 * self.dot(normal)));
 }
 
+pub fn refract(self: *const Vec3, normal: *const Vec3, etai_over_estat: f64) Vec3 {
+    const cos_theta: f64 = @min(self.inv().dot(normal), 1.0);
+    const r_out_perp = self.add(normal.mul(cos_theta)).mul(etai_over_estat);
+    const r_out_parallel = normal.mul(-@sqrt(@abs(1.0 - r_out_perp.lenSquared())));
+    return r_out_perp.add(r_out_parallel);
+}
+
 pub fn nearZero(self: *const Vec3) bool {
     const s = 1e-8;
     return @abs(self.e[0]) < s and @abs(self.e[1]) < s and @abs(self.e[2]) < s;
