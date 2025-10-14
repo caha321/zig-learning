@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Zig",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/zig-out/bin/ray",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/ray",
+            "stopOnEntry": false,
+            "preLaunchTask": "zig build"
+        }
+    ]
+}
