@@ -1,5 +1,7 @@
 const std = @import("std");
 const lib = @import("lib.zig");
+const Vec3 = lib.Vec3;
+const Point3 = lib.Point3;
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
@@ -20,7 +22,6 @@ pub fn main() !void {
     var world = try lib.HittableList.init(allocator);
 
     const Sphere = lib.Sphere;
-    const Vec3 = lib.Vec3;
 
     var spheres = std.StringArrayHashMap(Sphere).init(allocator);
     try spheres.put("ground", Sphere.init(Vec3.init(0.0, -100.5, -1.0), 100.0, materials.getPtr("ground").?));
@@ -41,6 +42,8 @@ pub fn main() !void {
         .image_width = 400,
         .max_depth = 10,
         .samples_per_pixel = 10,
+        .vfov = 20,
+        .look_from = Point3.init(-2, 2, 1),
     });
     const image = try lib.Image.init(allocator, cam.image_width, cam.image_height);
 

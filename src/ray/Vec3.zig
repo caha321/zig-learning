@@ -80,7 +80,7 @@ pub fn cross(self: *const Vec3, other: *const Vec3) Vec3 {
 }
 
 pub fn unitVector(self: *const Vec3) Vec3 {
-    return Vec3{ .e = self.e / @as(Vector3, @splat(self.len())) };
+    return self.div(self.len());
 }
 
 /// Returns a random vector where each element is in [0,1)

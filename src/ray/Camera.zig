@@ -12,6 +12,10 @@ const Options = struct {
     image_width: usize = 400,
     samples_per_pixel: usize = 10,
     max_depth: isize = 10,
+    vfov: f64 = 90,
+    look_from: Point3 = Point3.init(0, 0, 0),
+    look_at: Point3 = Point3.init(0, 0, -1),
+    v_up: Vec3 = Vec3.init(0, 1, 0),
 };
 
 /// Ratio of image width over height
@@ -34,33 +38,54 @@ samples_per_pixel: usize,
 pixel_samples_scale: f64,
 /// Maximum number of ray bounces into scene
 max_depth: isize,
+/// Vertical view angle (field of view)
+vfov: f64,
+/// Point camera is looking from
+look_from: Point3,
+/// Point camera is looking at
+look_at: Point3,
+/// Camera-relative "up" direction
+v_up: Vec3,
 
 pub fn init(options: Options) Camera {
     const image_height = @max(1, @as(usize, @intFromFloat(@as(f64, @floatFromInt(options.image_width)) / options.aspect_ratio)));
-    const center = Point3.zero;
+    const center = options.look_from;
 
     // Determine viewport dimensions.
-    const focal_length = 1.0;
-    const viewport_height = 2.0;
+    const focal_length = options.look_from.sub(options.look_at).len();
+    const theta = std.math.degreesToRadians(options.vfov);
+    const h = @tan(theta / 2);
+    const viewport_height = 2 * h * focal_length;
     const viewport_width = viewport_height * ((@as(f64, @floatFromInt(options.image_width)) / @as(f64, @floatFromInt(image_height))));
 
+    // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+    const w = options.look_from.sub(options.look_at).unitVector();
+    const u = Vec3.cross(&options.v_up, &w).unitVector();
+    const v = Vec3.cross(&w, &u);
+
     // Calculate the vectors across the horizontal and down the vertical viewport edges.
-    const viewport_u = Vec3.init(viewport_width, 0, 0);
-    const viewport_v = Vec3.init(0, -viewport_height, 0);
+    const viewport_u = u.mul(viewport_width); // Vector across viewport horizontal edge
+    const viewport_v = v.inv().mul(viewport_height); // Vector down viewport vertical edge
 
     // Calculate the horizontal and vertical delta vectors from pixel to pixel.
-    const pixel_delta_u = viewport_u.div(@as(f64, @floatFromInt(options.image_width)));
-    const pixel_delta_v = viewport_v.div(@as(f64, @floatFromInt(image_height)));
+    const pixel_delta_u = viewport_u.div(options.image_width);
+    const pixel_delta_v = viewport_v.div(image_height);
 
     // Calculate the location of the upper left pixel.
-    const viewport_upper_left = center.sub(Vec3.init(0, 0, focal_length)).sub(viewport_u.div(2)).sub(viewport_v.div(2));
+    const viewport_upper_left = center.sub(w.mul(focal_length)).sub(viewport_u.div(2)).sub(viewport_v.div(2));
     const pixel00_loc = viewport_upper_left.add((pixel_delta_u.add(pixel_delta_v)).mul(0.5));
 
     return Camera{
+        // from options
         .aspect_ratio = options.aspect_ratio,
         .image_width = options.image_width,
         .samples_per_pixel = options.samples_per_pixel,
         .max_depth = options.max_depth,
+        .vfov = options.vfov,
+        .look_at = options.look_at,
+        .look_from = options.look_from,
+        .v_up = options.v_up,
+        // calculated
         .image_height = image_height,
         .center = center,
         .pixel00_loc = pixel00_loc,
