@@ -16,15 +16,15 @@ pub fn main() !void {
     const stdout = &writer.interface;
     defer stdout.flush() catch {};
 
+    // Materials
+
+    var materials = std.StringArrayHashMap(Material).init(allocator);
+    try Material.parseMaterialsJson(allocator, &materials);
+    materials.lockPointers();
+
     // World
 
     var world = try HittableList.init(allocator);
-    var materials = std.StringArrayHashMap(Material).init(allocator);
-    try materials.put("ground", Material.initLambertian(Vec3.init(0.8, 0.8, 0)));
-    try materials.put("center", Material.initLambertian(Vec3.init(0.1, 0.2, 0.5)));
-    try materials.put("left", Material.initMetal(Vec3.init(0.8, 0.8, 0.8), 0.3));
-    try materials.put("right", Material.initMetal(Vec3.init(0.8, 0.6, 0.2), 1));
-    materials.lockPointers();
 
     var spheres = std.StringArrayHashMap(Sphere).init(allocator);
     try spheres.put("ground", Sphere.init(Vec3.init(0.0, -100.5, -1.0), 100.0, materials.getPtr("ground").?));
@@ -47,7 +47,10 @@ pub fn main() !void {
     });
     const image = try Image.init(allocator, cam.image_width, cam.image_height);
 
+    var timer = try std.time.Timer.start();
     try cam.render(allocator, &image, &world);
+    const elapsed: f64 = @floatFromInt(timer.read());
+    std.log.info("Rendering took {d:.3}ms", .{elapsed / std.time.ns_per_ms});
 
     try image.write(stdout);
 }
