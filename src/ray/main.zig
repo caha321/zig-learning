@@ -1,12 +1,5 @@
 const std = @import("std");
-const Camera = @import("Camera.zig");
-const Vec3 = @import("Vec3.zig");
-const Hittable = @import("Hittable.zig");
-const HittableList = @import("HittableList.zig");
-const Sphere = @import("Sphere.zig");
-const Point3 = Vec3.Point3;
-const material = @import("material.zig");
-const Image = @import("Image.zig");
+const lib = @import("lib.zig");
 
 pub fn main() !void {
     const allocator = std.heap.page_allocator;
@@ -18,13 +11,16 @@ pub fn main() !void {
 
     // Materials
 
-    var materials = std.StringArrayHashMap(material.Material).init(allocator);
-    try material.parseMaterialsJson(allocator, &materials);
+    var materials = std.StringArrayHashMap(lib.material.Material).init(allocator);
+    try lib.material.parseMaterialsJson(allocator, &materials);
     materials.lockPointers();
 
     // World
 
-    var world = try HittableList.init(allocator);
+    var world = try lib.HittableList.init(allocator);
+
+    const Sphere = lib.Sphere;
+    const Vec3 = lib.Vec3;
 
     var spheres = std.StringArrayHashMap(Sphere).init(allocator);
     try spheres.put("ground", Sphere.init(Vec3.init(0.0, -100.5, -1.0), 100.0, materials.getPtr("ground").?));
@@ -36,17 +32,17 @@ pub fn main() !void {
 
     var it = spheres.iterator();
     while (it.next()) |entry| {
-        try world.add(Hittable.implBy(entry.value_ptr));
+        try world.add(lib.Hittable.implBy(entry.value_ptr));
     }
 
     // Camera
 
-    const cam = Camera.init(.{
+    const cam = lib.Camera.init(.{
         .image_width = 400,
         .max_depth = 10,
         .samples_per_pixel = 10,
     });
-    const image = try Image.init(allocator, cam.image_width, cam.image_height);
+    const image = try lib.Image.init(allocator, cam.image_width, cam.image_height);
 
     var timer = try std.time.Timer.start();
     try cam.render(allocator, &image, &world);

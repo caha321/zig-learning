@@ -1,15 +1,9 @@
 const std = @import("std");
-const HittableList = @import("HittableList.zig");
-const HitRecord = @import("HitRecord.zig");
-const Interval = @import("Interval.zig");
-const Ray = @import("Ray.zig");
-const color = @import("color.zig");
-const Color = color.Color;
-const Pixel = color.Pixel;
-const Vec3 = @import("Vec3.zig");
-const Point3 = Vec3.Point3;
-const util = @import("util.zig");
-const Image = @import("Image.zig");
+const lib = @import("lib.zig");
+const Point3 = lib.Point3;
+const Vec3 = lib.Vec3;
+const Ray = lib.Ray;
+const Color = lib.Color;
 
 const Camera = @This();
 
@@ -76,7 +70,13 @@ pub fn init(options: Options) Camera {
     };
 }
 
-fn renderRow(self: *const Camera, y: usize, image: *const Image, world: *const HittableList, progress: std.Progress.Node) void {
+fn renderRow(
+    self: *const Camera,
+    y: usize,
+    image: *const lib.Image,
+    world: *const lib.HittableList,
+    progress: std.Progress.Node,
+) void {
     var buf: [32]u8 = undefined;
     const name = std.fmt.bufPrint(&buf, "Row {d}", .{y}) catch "Row ??";
     const progress_row = progress.start(name, self.image_width);
@@ -87,13 +87,18 @@ fn renderRow(self: *const Camera, y: usize, image: *const Image, world: *const H
             pixel_color = pixel_color.add(rayColor(&ray, self.max_depth, world));
         }
 
-        image.data[y * self.image_width + x] = Pixel.fromColor(pixel_color.mul(self.pixel_samples_scale));
+        image.data[y * self.image_width + x] = lib.Pixel.fromColor(pixel_color.mul(self.pixel_samples_scale));
         progress_row.completeOne();
     }
     progress_row.end();
 }
 
-pub fn render(self: *const Camera, allocator: std.mem.Allocator, image: *const Image, world: *const HittableList) !void {
+pub fn render(
+    self: *const Camera,
+    allocator: std.mem.Allocator,
+    image: *const lib.Image,
+    world: *const lib.HittableList,
+) !void {
     var pool: std.Thread.Pool = undefined;
     try pool.init(.{ .allocator = allocator });
     defer pool.deinit();
@@ -127,16 +132,20 @@ fn getRay(self: *const Camera, i: usize, j: usize) Ray {
 
 /// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
 fn sampleSquare() Vec3 {
-    return Vec3.init(std.Random.float(util.rnd, f64) - 0.5, std.Random.float(util.rnd, f64) - 0.5, 0);
+    return Vec3.init(
+        std.Random.float(lib.util.rnd, f64) - 0.5,
+        std.Random.float(lib.util.rnd, f64) - 0.5,
+        0,
+    );
 }
 
-fn rayColor(ray: *const Ray, depth: isize, world: *const HittableList) Color {
+fn rayColor(ray: *const Ray, depth: isize, world: *const lib.HittableList) Color {
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0) return Color.zero;
 
-    var rec = HitRecord{};
+    var rec = lib.HitRecord{};
     // min of 0.001 to fix the "shadow acne" problem
-    if (world.hit(ray, Interval{ .min = 0.001, .max = std.math.inf(f64) }, &rec)) {
+    if (world.hit(ray, lib.Interval{ .min = 0.001, .max = std.math.inf(f64) }, &rec)) {
         // return rec.normal.add(Color.one).mul(0.5);
         var scattered = Ray{};
         var attenuation = Color.zero;
@@ -146,7 +155,7 @@ fn rayColor(ray: *const Ray, depth: isize, world: *const HittableList) Color {
     }
 
     // background
-    return color.lerp(
+    return lib.color.lerp(
         0.5 * (ray.direction.unitVector().y() + 1.0),
         Color.one,
         Color.init(0.5, 0.7, 1.0),
