@@ -8,10 +8,10 @@ const Material = @import("material.zig").Material;
 const Sphere = @This();
 
 center: Point3,
-radius: f64,
+radius: Vec3.T,
 mat: *const Material,
 
-pub fn init(center: Point3, radius: f64, mat: *const Material) Sphere {
+pub fn init(center: Point3, radius: Vec3.T, mat: *const Material) Sphere {
     return Sphere{
         .center = center,
         .radius = @max(0, radius),
@@ -26,7 +26,7 @@ pub fn hit(self: *const Sphere, ray: *const Ray, ray_t: Interval, rec: *HitRecor
     const h = Vec3.dot(&ray.direction, &oc);
     const c = oc.lenSquared() - (self.radius * self.radius);
 
-    const discriminant = h * h - a * c;
+    const discriminant: Vec3.T = h * h - a * c;
     if (discriminant < 0) {
         return false;
     }

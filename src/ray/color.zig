@@ -2,15 +2,17 @@ const std = @import("std");
 const Vec3 = @import("Vec3.zig");
 const Interval = @import("Interval.zig");
 
+const T = Vec3.T;
+
 pub const Color = Vec3;
 const intensity = Interval{ .min = 0, .max = 0.999 };
 
 /// linear blend / interpolation
-pub fn lerp(a: f64, start: Color, end: Color) Color {
+pub fn lerp(a: T, start: Color, end: Color) Color {
     return start.mul(1.0 - a).add(end.mul(a));
 }
 
-pub fn linearToGamma(linear_component: f64) f64 {
+pub fn linearToGamma(linear_component: T) T {
     if (linear_component > 0) return @sqrt(linear_component);
     return 0.0;
 }

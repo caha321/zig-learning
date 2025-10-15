@@ -5,6 +5,8 @@ const Ray = @import("Ray.zig");
 const Vec3 = @import("Vec3.zig");
 const util = @import("util.zig");
 
+const T = Vec3.T;
+
 const MaterialError = error{
     UnknownMaterialType,
     AlbedoMissing,
@@ -15,12 +17,12 @@ const MaterialError = error{
 const MaterialJson = struct {
     name: []u8,
     type_: []u8,
-    albedo: ?[3]f64 = null,
-    fuzz: ?f64 = null,
-    refraction_index: ?f64 = null,
+    albedo: ?[3]T = null,
+    fuzz: ?T = null,
+    refraction_index: ?T = null,
 };
 
-const MaterialType = enum { lambertian, metal, dielectric };
+pub const MaterialType = enum { lambertian, metal, dielectric };
 
 pub const Material = union(MaterialType) {
     lambertian: Lambertian,
@@ -84,19 +86,19 @@ pub const Material = union(MaterialType) {
     }
 };
 
-const Lambertian = struct {
+pub const Lambertian = struct {
     albedo: Color,
 };
 
-const Metal = struct {
+pub const Metal = struct {
     albedo: Color,
-    fuzz: f64,
+    fuzz: T,
 };
 
-const Dielectric = struct {
+pub const Dielectric = struct {
     /// Refractive index in vacuum or air, or the ratio of the material's refractive index over
     /// the refractive index of the enclosing media
-    refraction_index: f64,
+    refraction_index: T,
 };
 
 fn parseAlbedo(mat_json: MaterialJson) !Color {
@@ -106,11 +108,11 @@ fn parseAlbedo(mat_json: MaterialJson) !Color {
         MaterialError.AlbedoMissing;
 }
 
-fn relectance(cosine: f64, refraction_index: f64) f64 {
+fn relectance(cosine: T, refraction_index: T) T {
     // Use Schlick's approximation for reflectance.
     var r0 = (1 - refraction_index) / (1 + refraction_index);
     r0 = r0 * r0;
-    return r0 + (1 - r0) * std.math.pow(f64, 1 - cosine, 5);
+    return r0 + (1 - r0) * std.math.pow(T, 1 - cosine, 5);
 }
 
 pub fn parseMaterialsJson(allocator: std.mem.Allocator, materials: *std.StringArrayHashMap(Material)) !void {

@@ -6,7 +6,7 @@ const Point3 = Vec3.Point3;
 p: Point3 = undefined,
 normal: Vec3 = undefined,
 mat: *const Material = undefined,
-t: f64 = undefined,
+t: Vec3.T = undefined,
 frontFace: bool = undefined,
 
 pub fn setFaceNormal(self: *@This(), ray: *const Ray, outward_normal: *const Vec3) void {

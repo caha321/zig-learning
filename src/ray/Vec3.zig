@@ -2,7 +2,9 @@
 const std = @import("std");
 const util = @import("util.zig");
 
-const Vector3 = @Vector(3, f64);
+pub const T = f32;
+
+const Vector3 = @Vector(3, T);
 
 const Vec3 = @This();
 
@@ -11,19 +13,19 @@ e: Vector3,
 pub const zero: Vec3 = .{ .e = Vector3{ 0, 0, 0 } };
 pub const one: Vec3 = .{ .e = Vector3{ 1, 1, 1 } };
 
-pub fn init(x_: f64, y_: f64, z_: f64) Vec3 {
+pub fn init(x_: T, y_: T, z_: T) Vec3 {
     return Vec3{ .e = .{ x_, y_, z_ } };
 }
 
-pub fn x(self: *const Vec3) f64 {
+pub fn x(self: *const Vec3) T {
     return self.e[0];
 }
 
-pub fn y(self: *const Vec3) f64 {
+pub fn y(self: *const Vec3) T {
     return self.e[1];
 }
 
-pub fn z(self: *const Vec3) f64 {
+pub fn z(self: *const Vec3) T {
     return self.e[2];
 }
 
@@ -59,15 +61,15 @@ pub fn add(self: *const Vec3, other: anytype) Vec3 {
     return Vec3{ .e = self.e + getOther(other) };
 }
 
-pub fn len(self: *const Vec3) f64 {
+pub fn len(self: *const Vec3) T {
     return @sqrt(self.lenSquared());
 }
 
-pub fn lenSquared(self: *const Vec3) f64 {
+pub fn lenSquared(self: *const Vec3) T {
     return self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2];
 }
 
-pub fn dot(self: *const Vec3, other: *const Vec3) f64 {
+pub fn dot(self: *const Vec3, other: *const Vec3) T {
     return self.e[0] * other.e[0] + self.e[1] * other.e[1] + self.e[2] * other.e[2];
 }
 
@@ -86,18 +88,18 @@ pub fn unitVector(self: *const Vec3) Vec3 {
 /// Returns a random vector where each element is in [0,1)
 pub fn random() Vec3 {
     return Vec3{ .e = .{
-        util.rnd.float(f64),
-        util.rnd.float(f64),
-        util.rnd.float(f64),
+        util.rnd.float(T),
+        util.rnd.float(T),
+        util.rnd.float(T),
     } };
 }
 
 /// Returns a random vector where each element is in [min,max)
-pub fn randomMinMax(min: f64, max: f64) Vec3 {
+pub fn randomMinMax(min: T, max: T) Vec3 {
     return Vec3{ .e = .{
-        util.randomFloatMinMax(f64, min, max),
-        util.randomFloatMinMax(f64, min, max),
-        util.randomFloatMinMax(f64, min, max),
+        util.randomFloatMinMax(T, min, max),
+        util.randomFloatMinMax(T, min, max),
+        util.randomFloatMinMax(T, min, max),
     } };
 }
 
@@ -123,8 +125,8 @@ pub fn reflect(self: *const Vec3, normal: *const Vec3) Vec3 {
     return self.sub(normal.mul(2.0 * self.dot(normal)));
 }
 
-pub fn refract(self: *const Vec3, normal: *const Vec3, etai_over_estat: f64) Vec3 {
-    const cos_theta: f64 = @min(self.inv().dot(normal), 1.0);
+pub fn refract(self: *const Vec3, normal: *const Vec3, etai_over_estat: T) Vec3 {
+    const cos_theta: T = @min(self.inv().dot(normal), 1.0);
     const r_out_perp = self.add(normal.mul(cos_theta)).mul(etai_over_estat);
     const r_out_parallel = normal.mul(-@sqrt(@abs(1.0 - r_out_perp.lenSquared())));
     return r_out_perp.add(r_out_parallel);
@@ -137,9 +139,9 @@ pub fn nearZero(self: *const Vec3) bool {
 pub const Point3 = Vec3;
 
 fn expectApproxEqRel(expected: Vec3, actual: Vec3) !void {
-    try std.testing.expectApproxEqRel(expected.e[0], actual.e[0], std.math.floatEpsAt(f64, expected.e[0]));
-    try std.testing.expectApproxEqRel(expected.e[1], actual.e[1], std.math.floatEpsAt(f64, expected.e[1]));
-    try std.testing.expectApproxEqRel(expected.e[2], actual.e[2], std.math.floatEpsAt(f64, expected.e[2]));
+    try std.testing.expectApproxEqRel(expected.e[0], actual.e[0], std.math.floatEpsAt(T, expected.e[0]));
+    try std.testing.expectApproxEqRel(expected.e[1], actual.e[1], std.math.floatEpsAt(T, expected.e[1]));
+    try std.testing.expectApproxEqRel(expected.e[2], actual.e[2], std.math.floatEpsAt(T, expected.e[2]));
 }
 
 test "div" {
@@ -151,7 +153,7 @@ test "div" {
 
 test "unit" {
     const v1 = Vec3.init(1, 2, 3);
-    try std.testing.expectApproxEqRel(1, v1.unitVector().len(), std.math.floatEpsAt(f64, 1));
+    try std.testing.expectApproxEqRel(1, v1.unitVector().len(), std.math.floatEpsAt(T, 1));
 }
 
 test "near zero" {

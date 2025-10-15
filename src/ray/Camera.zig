@@ -5,10 +5,12 @@ const Vec3 = lib.Vec3;
 const Ray = lib.Ray;
 const Color = lib.Color;
 
+const T = lib.Vec3.T;
+
 const Camera = @This();
 
 /// Ratio of image width over height
-aspect_ratio: f64 = 16.0 / 9.0,
+aspect_ratio: T = 16.0 / 9.0,
 /// Rendered image width in pixel count
 image_width: usize = 400,
 /// Count of random samples for each pixel
@@ -17,7 +19,7 @@ samples_per_pixel: usize = 10,
 max_depth: isize = 10,
 
 /// Vertical view angle (field of view)
-vfov: f64 = 90,
+vfov: T = 90,
 /// Point camera is looking from
 look_from: Point3 = Point3.init(0, 0, 0),
 /// Point camera is looking at
@@ -40,11 +42,11 @@ pixel_delta_u: Vec3 = undefined,
 pixel_delta_v: Vec3 = undefined,
 
 /// Color scale factor for a sum of pixel samples
-pixel_samples_scale: f64 = undefined,
+pixel_samples_scale: T = undefined,
 
 pub fn init(self: *Camera) void {
-    self.image_height = @max(1, @as(usize, @intFromFloat(@as(f64, @floatFromInt(self.image_width)) / self.aspect_ratio)));
-    self.pixel_samples_scale = 1.0 / @as(f64, @floatFromInt(self.samples_per_pixel));
+    self.image_height = @max(1, @as(usize, @intFromFloat(@as(T, @floatFromInt(self.image_width)) / self.aspect_ratio)));
+    self.pixel_samples_scale = 1.0 / @as(T, @floatFromInt(self.samples_per_pixel));
 
     self.center = self.look_from;
 
@@ -53,7 +55,7 @@ pub fn init(self: *Camera) void {
     const theta = std.math.degreesToRadians(self.vfov);
     const h = @tan(theta / 2);
     const viewport_height = 2 * h * focal_length;
-    const viewport_width = viewport_height * ((@as(f64, @floatFromInt(self.image_width)) / @as(f64, @floatFromInt(self.image_height))));
+    const viewport_width = viewport_height * ((@as(T, @floatFromInt(self.image_width)) / @as(T, @floatFromInt(self.image_height))));
 
     // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
     const w = self.look_from.sub(self.look_at).unitVector();
@@ -125,8 +127,8 @@ pub fn render(
 /// randomly sampled point around the pixel location i, j.
 fn getRay(self: *const Camera, i: usize, j: usize) Ray {
     const offset = sampleSquare();
-    const pixel_sample = self.pixel00_loc.add(self.pixel_delta_u.mul(offset.x() + (@as(f64, @floatFromInt(i))))
-        .add(self.pixel_delta_v.mul(offset.y() + @as(f64, @floatFromInt(j)))));
+    const pixel_sample = self.pixel00_loc.add(self.pixel_delta_u.mul(offset.x() + (@as(T, @floatFromInt(i))))
+        .add(self.pixel_delta_v.mul(offset.y() + @as(T, @floatFromInt(j)))));
     return Ray{
         .origin = self.center,
         .direction = pixel_sample.sub(self.center),
@@ -136,8 +138,8 @@ fn getRay(self: *const Camera, i: usize, j: usize) Ray {
 /// Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
 fn sampleSquare() Vec3 {
     return Vec3.init(
-        std.Random.float(lib.util.rnd, f64) - 0.5,
-        std.Random.float(lib.util.rnd, f64) - 0.5,
+        std.Random.float(lib.util.rnd, T) - 0.5,
+        std.Random.float(lib.util.rnd, T) - 0.5,
         0,
     );
 }
@@ -148,7 +150,7 @@ fn rayColor(ray: *const Ray, depth: isize, world: *const lib.HittableList) Color
 
     var rec = lib.HitRecord{};
     // min of 0.001 to fix the "shadow acne" problem
-    if (world.hit(ray, lib.Interval{ .min = 0.001, .max = std.math.inf(f64) }, &rec)) {
+    if (world.hit(ray, lib.Interval{ .min = 0.001, .max = std.math.inf(T) }, &rec)) {
         // return rec.normal.add(Color.one).mul(0.5);
         var scattered = Ray{};
         var attenuation = Color.zero;
