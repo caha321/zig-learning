@@ -2,7 +2,7 @@
 const std = @import("std");
 const util = @import("util.zig");
 
-pub const T = f32;
+pub const T = f64;
 
 const Vector3 = @Vector(3, T);
 
