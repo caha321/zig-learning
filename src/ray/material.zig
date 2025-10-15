@@ -24,31 +24,45 @@ const MaterialJson = struct {
 
 pub const MaterialType = enum { lambertian, metal, dielectric };
 
-pub const Material = union(MaterialType) {
-    lambertian: Lambertian,
-    metal: Metal,
-    dielectric: Dielectric,
+comptime {
+    if (@sizeOf(T) == 4) {
+        std.debug.assert(@sizeOf(Material) == 32);
+    } else {
+        std.debug.assert(@sizeOf(Material) == 64);
+    }
+}
+
+pub const Material = struct {
+    albedo: Color = undefined,
+    fuzz: T = undefined,
+    /// Refractive index in vacuum or air, or the ratio of the material's refractive index over
+    /// the refractive index of the enclosing media
+    refraction_index: T = undefined,
+    type_: MaterialType,
 
     pub fn fromJson(mat_json: MaterialJson) !Material {
         const material_type = std.meta.stringToEnum(MaterialType, mat_json.type_) orelse return MaterialError.UnknownMaterialType;
 
         return switch (material_type) {
-            .dielectric => Material{ .dielectric = Dielectric{
+            .dielectric => Material{
+                .type_ = material_type,
                 .refraction_index = mat_json.refraction_index orelse return MaterialError.RefractionIndexMissing,
-            } },
-            .lambertian => Material{ .lambertian = Lambertian{
+            },
+            .lambertian => Material{
+                .type_ = material_type,
                 .albedo = try parseAlbedo(mat_json),
-            } },
-            .metal => Material{ .metal = Metal{
+            },
+            .metal => Material{
+                .type_ = material_type,
                 .albedo = try parseAlbedo(mat_json),
                 .fuzz = mat_json.fuzz orelse 0.0,
-            } },
+            },
         };
     }
 
     pub fn scatter(self: *const Material, ray: *const Ray, rec: *HitRecord, attenuation: *Color, scattered: *Ray) bool {
-        switch (self.*) {
-            .lambertian => |inner| {
+        switch (self.type_) {
+            .lambertian => {
                 var scatter_direction = rec.normal.add(Vec3.randomUnitVector());
 
                 // Catch degenerate scatter direction
@@ -56,24 +70,24 @@ pub const Material = union(MaterialType) {
                     scatter_direction = rec.normal;
 
                 scattered.* = Ray{ .origin = rec.p, .direction = scatter_direction };
-                attenuation.* = inner.albedo;
+                attenuation.* = self.albedo;
                 return true;
             },
-            .metal => |inner| {
-                const reflected = ray.direction.reflect(&rec.normal).add(Vec3.randomUnitVector().mul(inner.fuzz));
+            .metal => {
+                const reflected = ray.direction.reflect(&rec.normal).add(Vec3.randomUnitVector().mul(self.fuzz));
                 scattered.* = Ray{ .origin = rec.p, .direction = reflected };
-                attenuation.* = inner.albedo;
+                attenuation.* = self.albedo;
                 return scattered.direction.dot(&rec.normal) > 0;
             },
-            .dielectric => |inner| {
-                const ri = if (rec.frontFace) 1.0 / inner.refraction_index else inner.refraction_index;
+            .dielectric => {
+                const ri = if (rec.frontFace) 1.0 / self.refraction_index else self.refraction_index;
 
                 const unit_direction = ray.direction.unitVector();
                 const cos_theta = @min(Vec3.dot(&unit_direction.inv(), &rec.normal), 1.0);
                 const sin_theta = @sqrt(1.0 - cos_theta * cos_theta);
 
                 const cannot_refract = ri * sin_theta > 1.0;
-                const direction = if (cannot_refract or relectance(cos_theta, ri) > util.rnd.float(f64))
+                const direction = if (cannot_refract or relectance(cos_theta, ri) > util.rnd.float(T))
                     unit_direction.reflect(&rec.normal)
                 else
                     unit_direction.refract(&rec.normal, ri);
@@ -84,21 +98,6 @@ pub const Material = union(MaterialType) {
             },
         }
     }
-};
-
-pub const Lambertian = struct {
-    albedo: Color,
-};
-
-pub const Metal = struct {
-    albedo: Color,
-    fuzz: T,
-};
-
-pub const Dielectric = struct {
-    /// Refractive index in vacuum or air, or the ratio of the material's refractive index over
-    /// the refractive index of the enclosing media
-    refraction_index: T,
 };
 
 fn parseAlbedo(mat_json: MaterialJson) !Color {
