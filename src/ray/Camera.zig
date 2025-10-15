@@ -1,4 +1,6 @@
 const std = @import("std");
+const rl = @import("raylib");
+const rlg = @import("raygui");
 const lib = @import("lib.zig");
 const Point3 = lib.Point3;
 const Vec3 = lib.Vec3;
@@ -78,7 +80,7 @@ pub fn init(self: *Camera) void {
 fn renderRow(
     self: *const Camera,
     y: usize,
-    image: *const lib.Image,
+    pixels: []rl.Color,
     world: *const lib.HittableList,
     progress: std.Progress.Node,
 ) void {
@@ -92,7 +94,7 @@ fn renderRow(
             pixel_color = pixel_color.add(rayColor(&ray, self.max_depth, world));
         }
 
-        image.data[y * self.image_width + x] = lib.Pixel.fromColor(pixel_color.mul(self.pixel_samples_scale));
+        pixels[y * self.image_width + x] = lib.color.toRlColor(pixel_color.mul(self.pixel_samples_scale));
         progress_row.completeOne();
     }
     progress_row.end();
@@ -101,26 +103,59 @@ fn renderRow(
 pub fn render(
     self: *const Camera,
     allocator: std.mem.Allocator,
-    image: *const lib.Image,
     world: *const lib.HittableList,
 ) !void {
     var pool: std.Thread.Pool = undefined;
     try pool.init(.{ .allocator = allocator });
     defer pool.deinit();
 
+    const image = rl.genImageColor(
+        @intCast(self.image_width),
+        @intCast(self.image_height),
+        .black,
+    );
+    //defer rl.unloadImage(image);
+
+    const pixels = try rl.loadImageColors(image);
+    //defer rl.unloadImageColors(pixels);
+
     const progress = std.Progress.start(.{
         .root_name = "Ray Tracer",
         .estimated_total_items = self.image_height,
     });
 
+    var timer = try std.time.Timer.start();
+
     // queue a thread for each row
     for (0..self.image_height) |y| {
-        try pool.spawn(renderRow, .{ self, y, image, world, progress });
+        try pool.spawn(renderRow, .{ self, y, pixels, world, progress });
     }
 
     var wait_group: std.Thread.WaitGroup = undefined;
     wait_group.reset();
     pool.waitAndWork(&wait_group);
+
+    const tex = rl.loadTextureFromImage(image) catch {
+        std.debug.print("Could not load texture from ray tracing render image!", .{});
+        return;
+    };
+    defer rl.unloadTexture(tex);
+
+    var buf: [32]u8 = undefined;
+
+    while (!rl.windowShouldClose()) { // Detect window close button or ESC key
+        rl.beginDrawing();
+        defer rl.endDrawing();
+
+        const elapsed: f64 = @floatFromInt(timer.read());
+        const text = try std.fmt.bufPrintZ(&buf, "{:.0}ms", .{elapsed / std.time.ns_per_ms});
+        defer rl.drawText(text, 10, 10, 24, .white);
+
+        rl.updateTexture(tex, @ptrCast(pixels));
+
+        rl.clearBackground(.black);
+        rl.drawTexture(tex, 0, 0, .white);
+    }
 }
 
 /// Construct a camera ray originating from the origin and directed at

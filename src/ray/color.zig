@@ -1,4 +1,5 @@
 const std = @import("std");
+const rl = @import("raylib");
 const Vec3 = @import("Vec3.zig");
 const Interval = @import("Interval.zig");
 
@@ -21,8 +22,9 @@ pub const Pixel = packed struct {
     r: u8,
     g: u8,
     b: u8,
+    a: u8,
 
-    pub const black = Pixel{ .r = 0, .g = 0, .b = 0 };
+    pub const black = Pixel{ .r = 0, .g = 0, .b = 0, .a = 255 };
 
     pub fn fromColor(color: Color) Pixel {
         // Apply a linear to gamma transform for gamma 2
@@ -35,6 +37,7 @@ pub const Pixel = packed struct {
             .r = @intFromFloat(256 * intensity.clamp(r)),
             .g = @intFromFloat(256 * intensity.clamp(g)),
             .b = @intFromFloat(256 * intensity.clamp(b)),
+            .a = 255,
         };
     }
 
@@ -42,3 +45,18 @@ pub const Pixel = packed struct {
         try writer.print("{} {} {}\n", .{ self.r, self.g, self.b });
     }
 };
+
+pub fn toRlColor(color: Color) rl.Color {
+    // Apply a linear to gamma transform for gamma 2
+    const r = linearToGamma(color.x());
+    const g = linearToGamma(color.y());
+    const b = linearToGamma(color.z());
+
+    return .{
+        // Translate the [0,1] component values to the byte range [0,255].
+        .r = @intFromFloat(256 * intensity.clamp(r)),
+        .g = @intFromFloat(256 * intensity.clamp(g)),
+        .b = @intFromFloat(256 * intensity.clamp(b)),
+        .a = 255,
+    };
+}

@@ -1,4 +1,7 @@
 const std = @import("std");
+
+const rl = @import("raylib");
+
 const lib = @import("lib.zig");
 const Vec3 = lib.Vec3;
 const Point3 = lib.Point3;
@@ -39,19 +42,24 @@ pub fn main() !void {
     // Camera
 
     var cam = lib.Camera{
-        .image_width = 400,
+        .image_width = 1600,
         .max_depth = 10,
         .samples_per_pixel = 10,
         .vfov = 20,
         .look_from = Point3.init(-2, 2, 1),
     };
     cam.init();
-    const image = try lib.Image.init(allocator, cam.image_width, cam.image_height);
 
-    var timer = try std.time.Timer.start();
-    try cam.render(allocator, &image, &world);
-    const elapsed: f64 = @floatFromInt(timer.read());
-    std.log.info("Rendering took {d:.3}ms", .{elapsed / std.time.ns_per_ms});
+    // Window stuff
 
-    try image.write(stdout);
+    rl.initWindow(
+        @intCast(cam.image_width),
+        @intCast(cam.image_height),
+        "Ray Tracing in One Weekend",
+    );
+    defer rl.closeWindow();
+
+    rl.setTargetFPS(30);
+
+    try cam.render(allocator, &world);
 }
