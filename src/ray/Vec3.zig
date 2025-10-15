@@ -110,6 +110,18 @@ pub fn randomUnitVector() Vec3 {
     }
 }
 
+/// Return a random vector inside the unit disk (X/Y) using a rejection method.
+pub fn randomUnitDisk() Vec3 {
+    while (true) {
+        const p = Vec3.init(
+            util.randomFloatMinMax(f64, -1, 1),
+            util.randomFloatMinMax(f64, -1, 1),
+            0,
+        );
+        if (p.lenSquared() < 1) return p;
+    }
+}
+
 pub fn randomOnHemisphere(normal: Vec3) Vec3 {
     const on_unit_sphere = randomUnitVector();
     if (dot(&on_unit_sphere, &normal) > 0.0) { // In the same hemisphere as the normal

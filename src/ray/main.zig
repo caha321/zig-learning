@@ -40,10 +40,12 @@ pub fn main() !void {
 
     var cam = lib.Camera{
         .image_width = 400,
-        .max_depth = 10,
-        .samples_per_pixel = 10,
+        .max_depth = 50,
+        .samples_per_pixel = 100,
         .vfov = 20,
         .look_from = Point3.init(-2, 2, 1),
+        .defocus_angle = 10.0,
+        .focus_dist = 3.4,
     };
     cam.init();
     const image = try lib.Image.init(allocator, cam.image_width, cam.image_height);
